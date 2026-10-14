@@ -110,13 +110,19 @@ def release(next_release):
     if main != ROOT:
         run(["git", "merge", "--no-edit", "main"])
     current_version = ".".join(map(str, version(ROOT)))
+    release_tag = "v" + current_version
     checked_release = git("log", "-1", "--format=%s") == "Release " + current_version
     main_ahead = bool(git("rev-list", "origin/main..HEAD"))
+    unreleased = (
+        bool(git("rev-list", release_tag + "..HEAD"))
+        if git("tag", "--list", release_tag, cwd=main)
+        else main_ahead
+    )
     tag_pending = (
         checked_release
-        and not git("ls-remote", "origin", "refs/tags/v" + current_version, cwd=main).split()
+        and not git("ls-remote", "origin", "refs/tags/" + release_tag, cwd=main).split()
     )
-    if not main_ahead and not tag_pending:
+    if not unreleased and not tag_pending:
         raise ValueError(
             "No committed changes to release. Use --check to verify the current build."
         )

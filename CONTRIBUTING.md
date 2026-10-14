@@ -38,8 +38,9 @@ Paste `scan-availability.js` into the D-Ticket console, then run `await scanAvai
 
 ## Publish a ZIP release
 
-1. From a branch with committed changes, run `python3 release.py` to release the next patch
-   version, or `python3 release.py --minor` / `--major` for feature or breaking releases.
+1. From any checkout with unreleased committed work — `main` after pulling a merged PR, or
+   a feature branch — run `python3 release.py` to release the next patch version, or
+   `python3 release.py --minor` / `--major` for feature or breaking releases.
    The command versions `extension/manifest.json` and `package.json` together, builds and
    tests the ZIP, updates the main checkout, pushes `main`, and pushes the matching `v*` tag.
 2. Pushing the tag runs the **Publish ZIP release** workflow. It verifies the tagged commit

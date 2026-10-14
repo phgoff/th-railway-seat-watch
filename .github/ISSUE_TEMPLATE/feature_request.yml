@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an idea for the extension or dashboard
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is this idea related to a problem?
+      description: Describe the problem, for example "I am always frustrated when […]".
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What should happen instead?
+      description: Describe what you want to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Other tools, settings, or workarounds you tried.
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      description: Context such as routes, device, or screenshots with fictional data only.

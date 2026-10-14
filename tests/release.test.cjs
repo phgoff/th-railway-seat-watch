@@ -47,6 +47,7 @@ function fixture(t) {
   git(main, 'config', 'core.hooksPath', '/dev/null');
   git(main, 'add', '.');
   git(main, 'commit', '-m', 'Initial extension');
+  git(main, 'tag', 'v1.0.0');
   const remote = path.join(temporary, 'remote.git');
   git(main, 'init', '--bare', '--initial-branch=main', remote);
   git(main, 'remote', 'add', 'origin', remote);
@@ -116,6 +117,28 @@ test('release flags publish the next minor or major version in both versioned fi
     assert.equal(h.version(), expected);
     assert.equal(h.packageVersion(), expected);
   }
+});
+
+test('a release versions merged pull request work sitting on origin main', (t) => {
+  const h = fixture(t);
+  h.git(h.main, 'checkout', '-b', 'merged-pr');
+  fs.writeFileSync(path.join(h.main, 'pr-notes.md'), 'Merged through a pull request\n');
+  h.git(h.main, 'add', 'pr-notes.md');
+  h.git(h.main, 'commit', '-m', 'Merged change');
+  h.git(h.main, 'push', 'origin', 'merged-pr:main');
+  h.git(h.main, 'checkout', 'main');
+  h.git(h.main, 'merge', '--ff-only', 'origin/main');
+  const output = execFileSync('python3', ['release.py'], {
+    cwd: h.main,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+  assert.match(output, /Released 1\.0\.1 to origin\/main/);
+  assert.equal(h.version(), '1.0.1');
+  assert.equal(h.packageVersion(), '1.0.1');
+  const commit = h.git(h.main, 'rev-parse', 'HEAD');
+  assert.equal(h.git(h.main, 'ls-remote', 'origin', 'refs/tags/v1.0.1').split(/\s+/)[0], commit);
+  assert.equal(h.git(h.main, 'status', '--porcelain'), '');
 });
 
 test('release flags refuse to re-version an unpublished checked release', (t) => {

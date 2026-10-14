@@ -1,6 +1,6 @@
 {
   "name": "railway-seat-watch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Development tools for the Railway Seat Watch browser extension",
   "license": "MIT",

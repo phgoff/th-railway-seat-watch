@@ -1,0 +1,78 @@
+name: Bug report
+description: Something in the extension or demo does not work as expected
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please use fictional data only — never
+        include real passenger details, session tokens, cookies, or screenshots
+        of real bookings.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A short description of the problem and what you expected to happen instead.
+      placeholder: Clicking a watch result does nothing, and the console shows …
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can it be reproduced?
+      description: Steps to reproduce, ideally starting from the built-in demo. Mention the routes, dates, and travel classes involved.
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension version
+      description: Shown next to the extension on chrome://extensions.
+      placeholder: 1.0.1
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Arc
+        - Chrome
+        - Edge
+        - Brave
+        - Other Chromium browser
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+      placeholder: macOS 15, Windows 11, …
+    validations:
+      required: true
+  - type: dropdown
+    id: signed-in
+    attributes:
+      label: Signed in to D-Ticket?
+      options:
+        - 'Yes'
+        - 'No'
+    validations:
+      required: true
+  - type: textarea
+    id: console-output
+    attributes:
+      label: Console output
+      description: Errors from the page console and from the extension service worker (chrome://extensions → inspect views). Redact anything personal.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: This report contains no real passenger details, session tokens, cookies, or screenshots of real bookings
+    validations:
+      required: true

@@ -1,0 +1,3493 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Railway Seat Watch</title>
+    <link rel="icon" type="image/svg+xml" href="extension/icon.svg" />
+    <style>
+      body {
+        margin: 0;
+        background: #0a0a0a;
+      }
+      #rail-watch-extension {
+        min-height: 100vh;
+      }
+    </style>
+    <script src="extension/preview-data.js" defer></script>
+    <script src="extension/alerts.js" defer></script>
+    <script src="extension/scanner.js" defer></script>
+    <script src="extension/ui.js" defer></script>
+    <script src="extension/calendar.js" defer></script>
+    <script src="extension/preview-runtime.js" defer></script>
+    <script src="extension/content.js" defer></script>
+  </head>
+  <body>
+    <template id="dashboard-template">
+      <style>
+        /* ---------- tokens ---------- */
+        :root {
+          --canvas: #0a0a0a;
+          --soft: #1a1c20;
+          --card: #191919;
+          --mid: #363a3f;
+          --hairline: #212327;
+          --ink: #ffffff;
+          --body: #dadbdf;
+          --mute: #8e9299;
+          --pill: rgba(255, 255, 255, 0.25);
+          --hatch: rgba(255, 255, 255, 0.05);
+          --hatch-0: rgba(255, 255, 255, 0);
+          --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+          --font-ui: system-ui, -apple-system, sans-serif;
+          --font-mono: ui-monospace, SFMono-Regular, monospace;
+          --watch-found: #87d6a4;
+          --watch-found-bg: rgba(34, 197, 94, 0.09);
+
+          /* Default dark: Platinum & Brass */
+          --breeze: #e2e8f0;
+          --focus: #e2e8f0;
+          --ok-ink: #f8fafc;
+          --tint-ok: rgba(248, 250, 252, 0.06);
+          --tint-ok-md: rgba(248, 250, 252, 0.08);
+          --tint-ok-hi: rgba(248, 250, 252, 0.11);
+          --tint-ok-hov: rgba(248, 250, 252, 0.16);
+          --tint-ok-subtle: rgba(248, 250, 252, 0.04);
+          --ok-border: rgba(248, 250, 252, 0.18);
+          --ok-border-hi: rgba(248, 250, 252, 0.28);
+
+          --sunset: #eab308;
+          --sunset-soft: #fef08a;
+          --low-ink: #fde047;
+          --tint-low: rgba(234, 179, 8, 0.16);
+          --tint-low-md: rgba(234, 179, 8, 0.3);
+          --tint-low-hi: rgba(234, 179, 8, 0.42);
+          --tint-low-urgent: rgba(234, 179, 8, 0.55);
+          --tint-low-hov: rgba(234, 179, 8, 0.6);
+          --low-border: rgba(234, 179, 8, 0.45);
+          --low-border-hi: rgba(234, 179, 8, 0.85);
+        }
+
+        [data-theme='light'] {
+          --watch-found: #166534;
+          --watch-found-bg: rgba(22, 101, 52, 0.07);
+          --canvas: #f5f5f3;
+          --soft: #ebebe8;
+          --card: #ffffff;
+          --mid: #c6c6c1;
+          --hairline: #e2e2dd;
+          --ink: #101114;
+          --body: #3a3b3f;
+          --mute: #5f6368;
+          --pill: rgba(0, 0, 0, 0.26);
+          --hatch: rgba(0, 0, 0, 0.06);
+          --hatch-0: rgba(0, 0, 0, 0);
+
+          /* Default light: Platinum & Brass */
+          --breeze: #1e293b;
+          --focus: #1e293b;
+          --ok-ink: #0f172a;
+          --tint-ok: rgba(30, 41, 59, 0.06);
+          --tint-ok-md: rgba(30, 41, 59, 0.08);
+          --tint-ok-hi: rgba(30, 41, 59, 0.1);
+          --tint-ok-hov: rgba(30, 41, 59, 0.14);
+          --tint-ok-subtle: rgba(30, 41, 59, 0.04);
+          --ok-border: rgba(30, 41, 59, 0.18);
+          --ok-border-hi: rgba(30, 41, 59, 0.3);
+
+          --sunset: #a16207;
+          --sunset-soft: #fef9c3;
+          --low-ink: #713f12;
+          --tint-low: rgba(161, 98, 7, 0.14);
+          --tint-low-md: rgba(161, 98, 7, 0.24);
+          --tint-low-hi: rgba(161, 98, 7, 0.36);
+          --tint-low-urgent: rgba(161, 98, 7, 0.48);
+          --tint-low-hov: rgba(161, 98, 7, 0.44);
+          --low-border: rgba(161, 98, 7, 0.4);
+          --low-border-hi: rgba(161, 98, 7, 0.8);
+        }
+
+        /* 4 Curated Palettes */
+
+        /* 1. Platinum & Brass */
+        [data-accent='brass'] {
+          --breeze: #e2e8f0;
+          --focus: #e2e8f0;
+          --ok-ink: #f8fafc;
+          --tint-ok: rgba(248, 250, 252, 0.06);
+          --tint-ok-md: rgba(248, 250, 252, 0.08);
+          --tint-ok-hi: rgba(248, 250, 252, 0.11);
+          --tint-ok-hov: rgba(248, 250, 252, 0.16);
+          --tint-ok-subtle: rgba(248, 250, 252, 0.04);
+          --ok-border: rgba(248, 250, 252, 0.18);
+          --ok-border-hi: rgba(248, 250, 252, 0.28);
+
+          --sunset: #eab308;
+          --sunset-soft: #fef08a;
+          --low-ink: #fde047;
+          --tint-low: rgba(234, 179, 8, 0.16);
+          --tint-low-md: rgba(234, 179, 8, 0.3);
+          --tint-low-hi: rgba(234, 179, 8, 0.42);
+          --tint-low-urgent: rgba(234, 179, 8, 0.55);
+          --tint-low-hov: rgba(234, 179, 8, 0.6);
+          --low-border: rgba(234, 179, 8, 0.45);
+          --low-border-hi: rgba(234, 179, 8, 0.85);
+        }
+        [data-theme='light'][data-accent='brass'] {
+          --breeze: #1e293b;
+          --focus: #1e293b;
+          --ok-ink: #0f172a;
+          --tint-ok: rgba(30, 41, 59, 0.06);
+          --tint-ok-md: rgba(30, 41, 59, 0.08);
+          --tint-ok-hi: rgba(30, 41, 59, 0.1);
+          --tint-ok-hov: rgba(30, 41, 59, 0.14);
+          --tint-ok-subtle: rgba(30, 41, 59, 0.04);
+          --ok-border: rgba(30, 41, 59, 0.18);
+          --ok-border-hi: rgba(30, 41, 59, 0.3);
+
+          --sunset: #a16207;
+          --sunset-soft: #fef9c3;
+          --low-ink: #713f12;
+          --tint-low: rgba(161, 98, 7, 0.14);
+          --tint-low-md: rgba(161, 98, 7, 0.24);
+          --tint-low-hi: rgba(161, 98, 7, 0.36);
+          --tint-low-urgent: rgba(161, 98, 7, 0.48);
+          --tint-low-hov: rgba(161, 98, 7, 0.44);
+          --low-border: rgba(161, 98, 7, 0.4);
+          --low-border-hi: rgba(161, 98, 7, 0.8);
+        }
+
+        /* 2. Cyan & Magenta */
+        [data-accent='cyan'] {
+          --breeze: #06b6d4;
+          --focus: #06b6d4;
+          --ok-ink: #22d3ee;
+          --tint-ok: rgba(6, 182, 212, 0.07);
+          --tint-ok-md: rgba(6, 182, 212, 0.09);
+          --tint-ok-hi: rgba(6, 182, 212, 0.12);
+          --tint-ok-hov: rgba(6, 182, 212, 0.16);
+          --tint-ok-subtle: rgba(6, 182, 212, 0.04);
+          --ok-border: rgba(6, 182, 212, 0.22);
+          --ok-border-hi: rgba(6, 182, 212, 0.32);
+
+          --sunset: #f43f5e;
+          --sunset-soft: #fecdd3;
+          --low-ink: #fda4af;
+          --tint-low: rgba(244, 63, 94, 0.16);
+          --tint-low-md: rgba(244, 63, 94, 0.3);
+          --tint-low-hi: rgba(244, 63, 94, 0.42);
+          --tint-low-urgent: rgba(244, 63, 94, 0.55);
+          --tint-low-hov: rgba(244, 63, 94, 0.6);
+          --low-border: rgba(244, 63, 94, 0.45);
+          --low-border-hi: rgba(244, 63, 94, 0.85);
+        }
+        [data-theme='light'][data-accent='cyan'] {
+          --breeze: #0891b2;
+          --focus: #0891b2;
+          --ok-ink: #155e75;
+          --tint-ok: rgba(8, 145, 178, 0.06);
+          --tint-ok-md: rgba(8, 145, 178, 0.08);
+          --tint-ok-hi: rgba(8, 145, 178, 0.1);
+          --tint-ok-hov: rgba(8, 145, 178, 0.14);
+          --tint-ok-subtle: rgba(8, 145, 178, 0.04);
+          --ok-border: rgba(8, 145, 178, 0.18);
+          --ok-border-hi: rgba(8, 145, 178, 0.3);
+
+          --sunset: #be123c;
+          --sunset-soft: #ffe4e6;
+          --low-ink: #9f1239;
+          --tint-low: rgba(190, 18, 60, 0.14);
+          --tint-low-md: rgba(190, 18, 60, 0.24);
+          --tint-low-hi: rgba(190, 18, 60, 0.36);
+          --tint-low-urgent: rgba(190, 18, 60, 0.48);
+          --tint-low-hov: rgba(190, 18, 60, 0.44);
+          --low-border: rgba(190, 18, 60, 0.4);
+          --low-border-hi: rgba(190, 18, 60, 0.8);
+        }
+
+        /* 3. Forest & Sunburst */
+        [data-accent='forest'] {
+          --breeze: #10b981;
+          --focus: #10b981;
+          --ok-ink: #34d399;
+          --tint-ok: rgba(16, 185, 129, 0.07);
+          --tint-ok-md: rgba(16, 185, 129, 0.09);
+          --tint-ok-hi: rgba(16, 185, 129, 0.12);
+          --tint-ok-hov: rgba(16, 185, 129, 0.16);
+          --tint-ok-subtle: rgba(16, 185, 129, 0.04);
+          --ok-border: rgba(16, 185, 129, 0.22);
+          --ok-border-hi: rgba(16, 185, 129, 0.32);
+
+          --sunset: #f59e0b;
+          --sunset-soft: #fef3c7;
+          --low-ink: #fcd34d;
+          --tint-low: rgba(245, 158, 11, 0.16);
+          --tint-low-md: rgba(245, 158, 11, 0.3);
+          --tint-low-hi: rgba(245, 158, 11, 0.42);
+          --tint-low-urgent: rgba(245, 158, 11, 0.55);
+          --tint-low-hov: rgba(245, 158, 11, 0.6);
+          --low-border: rgba(245, 158, 11, 0.45);
+          --low-border-hi: rgba(245, 158, 11, 0.85);
+        }
+        [data-theme='light'][data-accent='forest'] {
+          --breeze: #047857;
+          --focus: #047857;
+          --ok-ink: #064e3b;
+          --tint-ok: rgba(4, 120, 87, 0.06);
+          --tint-ok-md: rgba(4, 120, 87, 0.08);
+          --tint-ok-hi: rgba(4, 120, 87, 0.1);
+          --tint-ok-hov: rgba(4, 120, 87, 0.14);
+          --tint-ok-subtle: rgba(4, 120, 87, 0.04);
+          --ok-border: rgba(4, 120, 87, 0.18);
+          --ok-border-hi: rgba(4, 120, 87, 0.3);
+
+          --sunset: #b45309;
+          --sunset-soft: #fef3c7;
+          --low-ink: #78350f;
+          --tint-low: rgba(180, 83, 9, 0.14);
+          --tint-low-md: rgba(180, 83, 9, 0.24);
+          --tint-low-hi: rgba(180, 83, 9, 0.36);
+          --tint-low-urgent: rgba(180, 83, 9, 0.48);
+          --tint-low-hov: rgba(180, 83, 9, 0.44);
+          --low-border: rgba(180, 83, 9, 0.4);
+          --low-border-hi: rgba(180, 83, 9, 0.8);
+        }
+
+        /* 4. Plum & Apricot */
+        [data-accent='plum'] {
+          --breeze: #a855f7;
+          --focus: #a855f7;
+          --ok-ink: #c084fc;
+          --tint-ok: rgba(168, 85, 247, 0.07);
+          --tint-ok-md: rgba(168, 85, 247, 0.09);
+          --tint-ok-hi: rgba(168, 85, 247, 0.12);
+          --tint-ok-hov: rgba(168, 85, 247, 0.16);
+          --tint-ok-subtle: rgba(168, 85, 247, 0.04);
+          --ok-border: rgba(168, 85, 247, 0.22);
+          --ok-border-hi: rgba(168, 85, 247, 0.32);
+
+          --sunset: #fb923c;
+          --sunset-soft: #ffedd5;
+          --low-ink: #fed7aa;
+          --tint-low: rgba(251, 146, 60, 0.16);
+          --tint-low-md: rgba(251, 146, 60, 0.3);
+          --tint-low-hi: rgba(251, 146, 60, 0.42);
+          --tint-low-urgent: rgba(251, 146, 60, 0.55);
+          --tint-low-hov: rgba(251, 146, 60, 0.6);
+          --low-border: rgba(251, 146, 60, 0.45);
+          --low-border-hi: rgba(251, 146, 60, 0.85);
+        }
+        [data-theme='light'][data-accent='plum'] {
+          --breeze: #7e22ce;
+          --focus: #7e22ce;
+          --ok-ink: #581c87;
+          --tint-ok: rgba(126, 34, 206, 0.06);
+          --tint-ok-md: rgba(126, 34, 206, 0.08);
+          --tint-ok-hi: rgba(126, 34, 206, 0.1);
+          --tint-ok-hov: rgba(126, 34, 206, 0.14);
+          --tint-ok-subtle: rgba(126, 34, 206, 0.04);
+          --ok-border: rgba(126, 34, 206, 0.18);
+          --ok-border-hi: rgba(126, 34, 206, 0.3);
+
+          --sunset: #c2410c;
+          --sunset-soft: #ffedd5;
+          --low-ink: #9a3412;
+          --tint-low: rgba(194, 65, 12, 0.14);
+          --tint-low-md: rgba(194, 65, 12, 0.24);
+          --tint-low-hi: rgba(194, 65, 12, 0.36);
+          --tint-low-urgent: rgba(194, 65, 12, 0.48);
+          --tint-low-hov: rgba(194, 65, 12, 0.44);
+          --low-border: rgba(194, 65, 12, 0.4);
+          --low-border-hi: rgba(194, 65, 12, 0.8);
+        }
+        html.theme-transition,
+        html.theme-transition *,
+        html.theme-transition *::before,
+        html.theme-transition *::after {
+          transition:
+            background-color 0.3s var(--ease-out),
+            color 0.3s var(--ease-out),
+            border-color 0.3s var(--ease-out),
+            outline-color 0.3s var(--ease-out),
+            box-shadow 0.3s var(--ease-out),
+            fill 0.3s var(--ease-out),
+            stroke 0.3s var(--ease-out) !important;
+          transition-delay: 0s !important;
+        }
+        /* ---------- base ---------- */
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+        html {
+          background: var(--canvas);
+        }
+        body {
+          background: var(--canvas);
+          color: var(--body);
+          font: 400 14px/1.5 var(--font-ui);
+          -webkit-font-smoothing: antialiased;
+          min-height: 100vh;
+          overflow: hidden;
+        }
+        .mono {
+          font-family: var(--font-mono);
+        }
+        .eyebrow {
+          font-family: var(--font-mono);
+          font-size: 11px;
+          font-weight: 400;
+          letter-spacing: 1.4px;
+          text-transform: uppercase;
+          color: var(--mute);
+          display: block;
+        }
+        .eyebrow.ink {
+          color: var(--ink);
+        }
+        .note {
+          font-size: 11px;
+          line-height: 1.6;
+          letter-spacing: 0.4px;
+          color: var(--mute);
+        }
+        :focus-visible {
+          outline: 2px solid var(--focus);
+          outline-offset: 2px;
+        }
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: var(--mid);
+          border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        /* ---------- components ---------- */
+        .pill {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          height: 34px;
+          padding: 0 16px;
+          border-radius: 9999px;
+          border: 1px solid var(--pill);
+          background: transparent;
+          color: var(--ink);
+          font-size: 14px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition:
+            border-color 0.15s var(--ease-out),
+            background 0.15s var(--ease-out),
+            color 0.15s var(--ease-out),
+            transform 0.16s var(--ease-out);
+        }
+        .pill:hover:not(:disabled) {
+          border-color: var(--focus);
+          color: var(--ink);
+        }
+        #bookingSetup:hover:not(:disabled),
+        .booking-dialog .pill:hover:not(:disabled) {
+          border-color: var(--mid);
+        }
+        .pill:active:not(:disabled) {
+          border-color: var(--ink);
+          color: var(--ink);
+        }
+        .pill:active:not(:disabled) {
+          transform: scale(0.97);
+        }
+        .pill:disabled {
+          opacity: 0.38;
+          cursor: not-allowed;
+        }
+        .pill-sm {
+          height: 30px;
+          padding: 0 12px;
+          font-size: 13px;
+        }
+        .pill-sm.pill-icon {
+          width: 28px;
+          height: 28px;
+          padding: 0;
+          display: inline-grid;
+          place-items: center;
+        }
+        .pill-icon {
+          width: 34px;
+          height: 34px;
+          padding: 0;
+          border-radius: 9999px;
+          flex: none;
+        }
+        .chip {
+          font-family: var(--font-mono);
+          font-size: 11px;
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
+          border: 1px solid var(--hairline);
+          border-radius: 9999px;
+          padding: 6px 10px;
+          color: var(--mute);
+          white-space: nowrap;
+        }
+        .chip-snap {
+          border-style: dashed;
+          border-color: rgba(255, 122, 23, 0.45);
+          color: var(--sunset-soft);
+        }
+        [data-theme='light'] .chip-snap {
+          border-color: rgba(196, 90, 0, 0.5);
+          color: var(--low-ink);
+        }
+        .card {
+          background: var(--card);
+          border: 1px solid var(--hairline);
+          border-radius: 8px;
+        }
+        .seg {
+          display: inline-flex;
+          align-self: flex-start;
+          width: fit-content;
+          border: 1px solid var(--hairline);
+          border-radius: 9999px;
+          overflow: hidden;
+          background: var(--soft);
+          padding: 2px;
+          gap: 2px;
+          position: relative;
+        }
+        .seg::before {
+          content: '';
+          position: absolute;
+          top: 2px;
+          bottom: 2px;
+          left: 2px;
+          width: calc((100% - 8px) / 3);
+          border-radius: 9999px;
+          background: var(--card);
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+          transition: transform 200ms var(--ease-out);
+          pointer-events: none;
+        }
+        .seg:has([data-val='10'][data-on])::before {
+          transform: translateX(calc(100% + 2px));
+        }
+        .seg:has([data-val='15'][data-on])::before {
+          transform: translateX(calc(200% + 4px));
+        }
+        [data-theme='dark'] .seg::before {
+          background: #323644;
+          box-shadow:
+            0 1px 5px rgba(0, 0, 0, 0.6),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+        .seg-b {
+          background: transparent;
+          border: 0;
+          color: var(--mute);
+          font-family: var(--font-mono);
+          font-size: 12px;
+          padding: 0 13px;
+          min-width: 62px;
+          height: 26px;
+          border-radius: 9999px;
+          cursor: pointer;
+          position: relative;
+          transition:
+            color 150ms var(--ease-out),
+            background-color 150ms var(--ease-out),
+            transform 125ms var(--ease-out);
+        }
+        .seg-b:hover:not([data-on]) {
+          color: var(--ink);
+          background: rgba(255, 255, 255, 0.06);
+        }
+        [data-theme='light'] .seg-b:hover:not([data-on]) {
+          color: #101114 !important;
+          background: rgba(0, 0, 0, 0.05);
+        }
+        .seg-b[data-on] {
+          color: var(--ink);
+          font-weight: 500;
+        }
+        [data-theme='dark'] .seg-b[data-on] {
+          color: #ffffff !important;
+        }
+        [data-theme='light'] .seg-b[data-on] {
+          color: #101114 !important;
+        }
+        .seg-b:active {
+          transform: scale(0.95);
+        }
+        .chk-list {
+          display: flex;
+          flex-direction: column;
+          gap: 11px;
+        }
+        .chk {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          font-size: 13.5px;
+          color: var(--body);
+        }
+        .chk input {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 16px;
+          height: 16px;
+          border: 1.5px solid var(--mid);
+          border-radius: 4px;
+          background: transparent;
+          cursor: pointer;
+          margin: 0;
+          flex: none;
+          display: grid;
+          place-content: center;
+          transition:
+            background 0.12s var(--ease-out),
+            border-color 0.12s var(--ease-out),
+            transform 125ms var(--ease-out);
+        }
+        .chk input:hover {
+          border-color: var(--focus);
+        }
+        .chk input:checked,
+        .chk input:indeterminate {
+          background: var(--ink);
+          border-color: var(--ink);
+        }
+        .chk input::before {
+          content: '';
+          width: 9px;
+          height: 9px;
+          opacity: 0;
+          transform: translateY(1px) scale(0.9);
+          transition:
+            opacity 125ms var(--ease-out),
+            transform 125ms var(--ease-out);
+          background: var(--canvas);
+          clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+        }
+        .chk input:checked::before {
+          opacity: 1;
+          transform: none;
+        }
+        .chk input:indeterminate::before {
+          opacity: 1;
+          transform: none;
+          clip-path: inset(3px 0);
+        }
+        .chk input:disabled {
+          cursor: default;
+          opacity: 0.4;
+        }
+        .chk input:focus-visible {
+          outline: 2px solid var(--focus);
+          outline-offset: 2px;
+        }
+        .chk input:active {
+          transform: scale(0.94);
+        }
+        .chk:hover span {
+          color: var(--ink);
+        }
+        .switch {
+          width: 38px;
+          height: 21px;
+          border-radius: 9999px;
+          border: 1px solid var(--pill);
+          background: transparent;
+          position: relative;
+          cursor: pointer;
+          flex: none;
+          transition:
+            background-color 160ms var(--ease-out),
+            border-color 160ms var(--ease-out);
+        }
+        .switch .knob {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 15px;
+          height: 15px;
+          border-radius: 9999px;
+          background: var(--mute);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+          transition:
+            transform 180ms var(--ease-out),
+            background-color 160ms var(--ease-out);
+        }
+        .switch:hover {
+          border-color: var(--ink);
+        }
+        .switch:hover .knob {
+          background: var(--ink);
+        }
+        .switch:active .knob {
+          transform: scaleX(1.12);
+          transform-origin: left center;
+        }
+        .switch[aria-checked='true'] {
+          background: #2563eb;
+          border-color: #2563eb;
+        }
+        .switch[aria-checked='true'] .knob {
+          transform: translateX(17px);
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        }
+        .switch[aria-checked='true']:hover {
+          background: #1d4ed8;
+          border-color: #1d4ed8;
+        }
+        .switch[aria-checked='true']:hover .knob {
+          background: #ffffff;
+        }
+        .switch[aria-checked='true']:active .knob {
+          transform: translateX(15px) scaleX(1.12);
+        }
+        [data-theme='dark'] .switch[aria-checked='true'] {
+          background: #3b82f6;
+          border-color: #3b82f6;
+        }
+        [data-theme='dark'] .switch[aria-checked='true']:hover {
+          background: #60a5fa;
+          border-color: #60a5fa;
+        }
+        .alerts-body {
+          transition: opacity 180ms var(--ease-out);
+        }
+        .alerts:not(.on) .alerts-body {
+          opacity: 0.5;
+        }
+
+        /* skeleton rows */
+        .mx-skel-foot {
+          border-top: 1px dashed var(--hairline);
+        }
+        .tr-skel {
+          transition: background-color 0.15s ease-out;
+          cursor: pointer;
+        }
+        .tr-skel:hover {
+          background: rgba(37, 99, 235, 0.04);
+        }
+        [data-theme='dark'] .tr-skel:hover {
+          background: rgba(59, 130, 246, 0.06);
+        }
+
+        .th-skel {
+          color: var(--mute);
+          font-weight: 400;
+          opacity: 0.75;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          height: 100%;
+          transition: all 0.15s ease-out;
+        }
+        .th-skel .skel-add {
+          font: 500 10px/1 var(--font-mono);
+          color: var(--mute);
+          margin-top: 3px;
+          opacity: 0;
+          transition: opacity 0.15s ease-out;
+        }
+        .tr-skel:hover .th-skel {
+          opacity: 1;
+          color: var(--ink);
+        }
+        .tr-skel:hover .th-skel .skel-add {
+          opacity: 0.9;
+          color: var(--ok-ink);
+        }
+
+        .skel-cell {
+          width: 100%;
+          height: 100%;
+          min-height: 55px;
+          border: 1.5px dashed var(--hairline);
+          border-radius: 6px;
+          background: rgba(125, 125, 125, 0.02);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          cursor: pointer;
+          transition: all 0.16s ease-out;
+          padding: 4px 6px;
+          color: var(--mute);
+        }
+        .skel-plus {
+          font: 300 16px/1 var(--font-mono);
+          opacity: 0.45;
+          transition: all 0.16s var(--ease-out);
+        }
+        .skel-hint {
+          font: 400 10.5px/1 var(--font-mono);
+          opacity: 0;
+          transform: translateY(2px);
+          transition: all 0.16s ease-out;
+          letter-spacing: 0.2px;
+        }
+
+        .skel-cell:hover,
+        .tr-skel:hover .skel-cell {
+          border-color: rgba(37, 99, 235, 0.35);
+          background: rgba(37, 99, 235, 0.05);
+        }
+        [data-theme='dark'] .skel-cell:hover,
+        [data-theme='dark'] .tr-skel:hover .skel-cell {
+          border-color: rgba(59, 130, 246, 0.4);
+          background: rgba(59, 130, 246, 0.08);
+        }
+
+        .skel-cell:hover .skel-plus,
+        .tr-skel:hover .skel-cell .skel-plus {
+          opacity: 1;
+          color: var(--ok-ink);
+          transform: scale(1.15);
+        }
+        .skel-cell:hover .skel-hint,
+        .tr-skel:hover .skel-cell .skel-hint {
+          opacity: 0.95;
+          color: var(--ok-ink);
+          transform: translateY(0);
+        }
+
+        /* autocomplete */
+        .ac {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+          min-width: 0;
+        }
+        .ac-list {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          margin-top: 4px;
+          background: var(--card);
+          border: 1px solid var(--hairline);
+          border-radius: 8px;
+          z-index: 60;
+          max-height: 240px;
+          overflow-y: auto;
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+          transform-origin: top;
+          transition:
+            opacity 0.14s var(--ease-out),
+            transform 0.14s var(--ease-out);
+        }
+        @starting-style {
+          .ac-list {
+            opacity: 0;
+            transform: translateY(-2px);
+          }
+        }
+        .ac-message {
+          margin: 0;
+          padding: 12px;
+          font: 400 13px/1.5 var(--font-ui);
+          color: var(--body);
+        }
+        .watch-banner {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px 20px;
+          padding: 14px 18px 14px 15px;
+          margin-bottom: 16px;
+          border-left: 3px solid var(--mute);
+          border-bottom: 1px solid var(--hairline);
+          background: var(--card);
+          flex: none;
+        }
+        .watch-banner[data-state='armed'],
+        .watch-banner[data-state='opening'],
+        .watch-banner[data-state='error'] {
+          border-left-color: var(--sunset);
+          background: var(--tint-low);
+        }
+        .watch-banner[data-state='armed'] strong,
+        .watch-banner[data-state='opening'] strong,
+        .watch-banner[data-state='error'] strong {
+          color: var(--low-ink);
+        }
+        .watch-banner[data-state='opened'] {
+          border-left-color: var(--watch-found);
+          background: var(--watch-found-bg);
+        }
+        .watch-banner[data-state='opened'] strong {
+          color: var(--watch-found);
+        }
+        .watch-banner[hidden] {
+          display: none;
+        }
+        .watch-banner-copy {
+          flex: 1 1 320px;
+          min-width: 0;
+        }
+        .watch-banner-copy strong {
+          font: 500 14px/1.5 var(--font-ui);
+        }
+        .watch-banner-copy p {
+          margin: 3px 0 0;
+          font: 400 12px/1.5 var(--font-ui);
+          overflow-wrap: anywhere;
+          color: var(--body);
+        }
+        .watch-banner-copy #watchBannerMeta,
+        .watch-banner-copy #watchLockHint {
+          color: var(--mute);
+        }
+        .watch-banner-detail {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0 16px;
+        }
+        .watch-banner-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+        .watch-action {
+          min-height: 44px;
+          padding: 0 10px;
+          background: transparent;
+          color: var(--body);
+          border: 1px solid transparent;
+          border-radius: 6px;
+          font: 500 12px/1.5 var(--font-ui);
+          cursor: pointer;
+        }
+        .watch-banner .watch-action {
+          min-height: 32px;
+        }
+        .watch-banner .watch-dismiss {
+          display: grid;
+          place-items: center;
+          width: 32px;
+          padding: 0;
+        }
+        @media (pointer: coarse), (max-width: 560px) {
+          .watch-banner .watch-action {
+            min-height: 44px;
+          }
+          .watch-banner .watch-dismiss {
+            width: 44px;
+          }
+        }
+        .watch-action:focus-visible {
+          outline: 2px solid var(--focus);
+          outline-offset: 2px;
+        }
+        .watch-action:active {
+          background: var(--soft);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .watch-action:hover {
+            background: var(--soft);
+          }
+          .watch-train summary:hover {
+            background: var(--soft);
+          }
+          .watch-choice:hover {
+            background: var(--soft);
+          }
+        }
+        .booking-dialog :is(input, select, button):disabled,
+        [data-watch-lock] :is(input, select, button):disabled,
+        [data-watch-lock] label:has(input:disabled),
+        .route-picker:has(input:disabled),
+        .dates-picker:has(button:disabled) {
+          cursor: not-allowed;
+        }
+        .watch-dates-trigger {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          min-width: 0;
+          padding: 8px 12px;
+          border: 1px solid var(--hairline);
+          border-radius: 6px;
+          background: var(--canvas);
+          color: var(--ink);
+          font: 400 13px/1.5 var(--font-ui);
+          text-align: left;
+          cursor: pointer;
+        }
+        .watch-dates-trigger svg {
+          flex: none;
+          width: 16px;
+          height: 16px;
+          color: var(--mute);
+        }
+        .date-calendar.watch-date-calendar {
+          width: 268px;
+          padding: 12px;
+          font-size: 12px;
+          transition: none;
+          transform: none;
+        }
+        .watch-date-calendar .calendar-header {
+          margin-bottom: 8px;
+        }
+        .calendar-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid var(--hairline);
+          color: var(--mute);
+        }
+        @media (pointer: coarse) {
+          .date-calendar.watch-date-calendar {
+            width: 332px;
+          }
+          .watch-date-calendar .calendar-days button {
+            height: 44px;
+          }
+          .watch-dates-trigger,
+          .watch-date-calendar .pill {
+            min-height: 44px;
+          }
+        }
+        .watch-choice-heading {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          font: 500 13px/1.5 var(--font-ui);
+        }
+        .watch-choice-tools {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .watch-quick-trigger {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-height: 32px;
+          padding: 4px 0;
+          border: 0;
+          background: transparent;
+          color: var(--body);
+          font: 400 12px/1.5 var(--font-ui);
+          cursor: pointer;
+        }
+        .watch-quick-trigger:disabled {
+          color: var(--mute);
+        }
+        .watch-quick-menu {
+          position: fixed;
+          margin: 0;
+          padding: 5px;
+          width: 184px;
+          max-width: calc(100vw - 24px);
+          border: 1px solid var(--mid);
+          border-radius: 6px;
+          background: var(--card);
+          color: var(--ink);
+          box-shadow: 0 2px 8px #0003;
+        }
+        .watch-quick-menu button {
+          display: block;
+          width: 100%;
+          min-height: 36px;
+          padding: 7px 10px;
+          border: 0;
+          border-radius: 3px;
+          background: transparent;
+          color: var(--ink);
+          font: 400 13px/1.5 var(--font-ui);
+          text-align: left;
+          cursor: pointer;
+        }
+        .watch-quick-menu button:disabled {
+          color: var(--mute);
+        }
+        .watch-quick-menu button:last-child {
+          margin-top: 4px;
+          padding-top: 10px;
+          border-top: 1px solid var(--hairline);
+          border-radius: 0;
+        }
+        .watch-quick-menu button:active:not(:disabled) {
+          background: var(--soft);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .watch-quick-menu button:hover:not(:disabled),
+          .watch-dates-trigger:hover:not(:disabled) {
+            border-color: var(--mid);
+            background: var(--soft);
+          }
+        }
+        .booking-preference {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-height: 32px;
+          font: 400 13px/1.5 var(--font-ui);
+          cursor: pointer;
+        }
+        .booking-preference input {
+          accent-color: var(--ink);
+        }
+        .booking-preference:has(input:disabled) {
+          cursor: not-allowed;
+        }
+        @media (pointer: coarse) {
+          .watch-quick-trigger,
+          .watch-quick-menu button,
+          .booking-preference {
+            min-height: 44px;
+          }
+        }
+        .watch-choice-list {
+          min-width: 0;
+        }
+        .watch-train {
+          border-top: 1px solid var(--hairline);
+          min-width: 0;
+        }
+        .watch-train:last-child {
+          border-bottom: 1px solid var(--hairline);
+        }
+        .watch-train summary {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 56px;
+          padding: 6px 8px;
+          border-radius: 4px;
+          cursor: pointer;
+          list-style: none;
+          font: 400 12px/1.5 var(--font-ui);
+        }
+        .watch-train summary::-webkit-details-marker {
+          display: none;
+        }
+        .watch-train summary:focus-visible {
+          outline: 2px solid var(--focus);
+          outline-offset: -2px;
+        }
+        .watch-train[open] summary > svg {
+          transform: rotate(180deg);
+        }
+        .watch-train-copy {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          gap: 2px 12px;
+          flex: 1;
+          min-width: 0;
+        }
+        .watch-train-copy strong {
+          font-weight: 500;
+          font-size: 14px;
+          color: var(--ink);
+        }
+        .watch-train-copy > span {
+          color: var(--mute);
+          font-variant-numeric: tabular-nums;
+        }
+        .watch-train-count {
+          color: var(--mute);
+          white-space: nowrap;
+        }
+        .watch-train-count.is-selected {
+          color: var(--ink);
+        }
+        .watch-train-coaches {
+          padding: 0 0 8px;
+        }
+        .watch-choice {
+          display: grid;
+          grid-template-columns: 16px minmax(0, 1fr) auto;
+          align-items: start;
+          gap: 10px;
+          padding: 10px 8px;
+          border-radius: 4px;
+          cursor: pointer;
+          font: 400 13px/1.5 var(--font-ui);
+        }
+        .watch-choice.is-selected {
+          background: var(--hatch);
+        }
+        .watch-choice input {
+          margin: 3px 0 0;
+          width: 16px;
+          height: 16px;
+          accent-color: var(--ink);
+        }
+        .watch-choice input:focus-visible {
+          outline: 2px solid var(--focus);
+          outline-offset: 2px;
+        }
+        .watch-choice-copy {
+          display: grid;
+          gap: 2px;
+          overflow-wrap: anywhere;
+        }
+        .watch-choice-description {
+          font-size: 12px;
+          line-height: 1.5;
+          color: var(--mute);
+        }
+        .watch-choice-count {
+          white-space: nowrap;
+          color: var(--mute);
+          font-variant-numeric: tabular-nums;
+        }
+        @media (max-width: 560px) {
+          .watch-choice {
+            grid-template-columns: 16px minmax(0, 1fr);
+            gap: 4px 8px;
+          }
+          .watch-choice-count {
+            grid-column: 2;
+            font-size: 12px;
+          }
+        }
+        .ac-item,
+        .ac-retry {
+          display: block;
+          width: 100%;
+          text-align: left;
+          background: transparent;
+          border: 0;
+          border-bottom: 1px solid var(--hairline);
+          color: var(--body);
+          font-size: 13px;
+          padding: 9px 12px;
+          cursor: pointer;
+        }
+        .ac-item:last-child {
+          border-bottom: 0;
+        }
+        .ac-item:hover {
+          background: var(--soft);
+          color: var(--ink);
+        }
+        /* status */
+        .status {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px 16px;
+        }
+        .status .st {
+          font-size: 11.5px;
+          letter-spacing: 0.4px;
+          color: var(--body);
+        }
+        /* ---------- matrix — card grid ---------- */
+        table.mx-t {
+          border-collapse: separate;
+          border-spacing: 8px 4px;
+          width: 100%;
+          min-width: 560px;
+        }
+        .mx-t th {
+          font: 400 11.5px/1.3 var(--font-mono);
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
+          color: var(--mute);
+          text-align: left;
+          padding: 0 2px 6px;
+          white-space: nowrap;
+          vertical-align: top;
+        }
+        .mx-t thead th {
+          position: sticky;
+          top: 0;
+          background: var(--canvas);
+          z-index: 2;
+          border-bottom: 1px solid var(--hairline);
+        }
+        .mx-t thead th.mx-date,
+        .mx-t tbody th.mx-date {
+          position: sticky;
+          left: 0;
+          background: var(--canvas);
+          z-index: 1;
+        }
+        .mx-t thead th.mx-date {
+          z-index: 3;
+        }
+        .mx-t th .th-no {
+          display: block;
+          color: var(--ink);
+        }
+        .mx-t th .th-time {
+          display: block;
+          font: 400 12px/1.3 var(--font-mono);
+          letter-spacing: 0;
+          text-transform: none;
+          color: var(--body);
+          margin-top: 2px;
+        }
+        .mx-t tbody th.mx-date {
+          font: 400 13.5px/1.2 var(--font-ui);
+          letter-spacing: 0.2px;
+          color: var(--body);
+          text-transform: none;
+          white-space: nowrap;
+          padding: 0 14px 0 2px;
+          vertical-align: middle;
+        }
+        .mx-t tbody tr:hover th.mx-date {
+          color: var(--ink);
+        }
+        .mx-t td {
+          padding: 0;
+          vertical-align: middle;
+        }
+        .mx-cell {
+          width: 100%;
+          height: var(--row-h, 60px);
+          min-height: 44px;
+          padding: 8px 10px;
+          border: 1px solid var(--hairline);
+          border-radius: 10px;
+          background: var(--card);
+          color: var(--ink);
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          text-align: center;
+          outline: 1.5px solid transparent;
+          outline-offset: -1.5px;
+          transition:
+            border-color 0.15s var(--ease-out),
+            background 0.15s var(--ease-out),
+            outline-color 0.12s ease-out;
+        }
+        .mx-cell b {
+          font: 400 21px/1 var(--font-mono);
+        }
+        .mx-cell i {
+          font: 400 9.5px/1.2 var(--font-mono);
+          font-style: normal;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          color: var(--mute);
+        }
+        .mx-t.dense .mx-cell {
+          padding: 4px 8px;
+          gap: 2px;
+        }
+        .mx-t.dense .mx-cell b {
+          font-size: 16px;
+        }
+        .mx-t.dense .mx-cell i {
+          font-size: 8.5px;
+          letter-spacing: 0.6px;
+        }
+        .mx-cell:hover {
+          border-color: var(--focus);
+        }
+        .mx-cell:hover b {
+          color: var(--ink) !important;
+          font-weight: 700 !important;
+        }
+        .mx-cell:hover i {
+          color: var(--ink) !important;
+          font-weight: 600 !important;
+          letter-spacing: 1.1px;
+        }
+        .mx-cell[aria-pressed='true'] {
+          position: relative;
+          z-index: 2;
+          outline-color: var(--ink);
+          transform: translateY(-1px);
+          box-shadow:
+            0 6px 18px -2px rgba(0, 0, 0, 0.5),
+            0 2px 6px -1px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .mx-cell[aria-pressed='true'] b {
+          color: var(--ink) !important;
+          font-weight: 700 !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        }
+        .mx-cell[aria-pressed='true'] i {
+          color: var(--ink) !important;
+          font-weight: 600 !important;
+          letter-spacing: 1.1px;
+        }
+        .mx-cell:focus-visible {
+          outline: 2px solid var(--focus);
+          outline-offset: -2px;
+        }
+
+        .st-ok {
+          background: var(--tint-ok);
+          border-color: var(--ok-border);
+        }
+        .st-ok b,
+        .st-ok i {
+          color: var(--ok-ink);
+          font-weight: 400;
+        }
+        .st-ok.md {
+          background: var(--tint-ok-md);
+        }
+        .st-ok.hi {
+          background: var(--tint-ok-hi);
+        }
+        .st-ok:hover {
+          background: var(--tint-ok-hov);
+          border-color: var(--ok-border-hi);
+        }
+        .st-ok[aria-pressed='true'] {
+          background: var(--tint-ok-hov);
+          border-color: var(--ok-border-hi);
+          box-shadow:
+            0 8px 22px -2px rgba(0, 0, 0, 0.55),
+            0 0 14px -2px var(--breeze),
+            inset 0 1px 0 rgba(255, 255, 255, 0.25),
+            inset 0 0 0 1px var(--ok-border-hi);
+        }
+
+        .st-low {
+          background: var(--tint-low);
+          border-color: var(--low-border);
+        }
+        .st-low b {
+          color: var(--low-ink);
+          font-weight: 600;
+        }
+        .st-low i {
+          color: var(--low-ink);
+        }
+        .st-low.md {
+          background: var(--tint-low-md);
+        }
+        .st-low.hi {
+          background: var(--tint-low-hi);
+          border-color: var(--low-border-hi);
+        }
+        .st-low.urgent {
+          background: var(--tint-low-urgent);
+          border-color: var(--low-border-hi);
+          box-shadow: inset 0 0 0 1px var(--low-border-hi);
+        }
+        .st-low:hover {
+          background: var(--tint-low-hov);
+          border-color: var(--low-border-hi);
+        }
+        .st-low[aria-pressed='true'] {
+          background: var(--tint-low-hov);
+          border-color: var(--low-border-hi);
+          box-shadow:
+            0 8px 24px -2px rgba(0, 0, 0, 0.6),
+            0 0 18px -1px var(--sunset),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3),
+            inset 0 0 0 1px var(--low-border-hi);
+        }
+
+        [data-theme='light'] .mx-cell[aria-pressed='true'] {
+          outline-color: var(--mid);
+          box-shadow:
+            0 6px 16px -2px rgba(0, 0, 0, 0.16),
+            0 2px 6px -1px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        [data-theme='light'] .mx-cell[aria-pressed='true'] b {
+          text-shadow: none;
+        }
+        [data-theme='light'] .st-ok[aria-pressed='true'] {
+          outline-color: var(--ok-border-hi);
+          box-shadow:
+            0 6px 18px -2px rgba(0, 0, 0, 0.14),
+            0 0 12px -2px var(--breeze),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8),
+            inset 0 0 0 1px var(--ok-border-hi);
+        }
+        [data-theme='light'] .st-low[aria-pressed='true'] {
+          outline-color: var(--low-border-hi);
+          box-shadow:
+            0 8px 22px -2px rgba(0, 0, 0, 0.18),
+            0 0 16px -1px var(--sunset),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            inset 0 0 0 1px var(--low-border-hi);
+        }
+        .st-out {
+          background-color: var(--card);
+          background-image: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.05) 0 8px,
+            rgba(255, 255, 255, 0) 8px 16px
+          );
+        }
+        .st-out:hover {
+          background-color: var(--soft);
+          border-color: var(--focus);
+        }
+        [data-theme='light'] .st-out {
+          background-image: repeating-linear-gradient(
+            45deg,
+            rgba(0, 0, 0, 0.055) 0 8px,
+            rgba(0, 0, 0, 0) 8px 16px
+          );
+        }
+        [data-theme='light'] .st-out:hover {
+          background-color: var(--soft);
+          border-color: var(--focus);
+        }
+        #filter input:disabled {
+          opacity: 1;
+        }
+        .st-loading {
+          border-style: dashed;
+          cursor: wait;
+          color: var(--mute);
+        }
+        .st-na {
+          border-style: dashed;
+        }
+        .st-txt-ok {
+          color: var(--ok-ink);
+        }
+        .st-txt-low {
+          color: var(--low-ink);
+        }
+        .mx-legend {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px 18px;
+          font-size: 10.5px;
+          letter-spacing: 0.4px;
+          color: var(--mute);
+          padding: 8px 2px 0;
+        }
+        .mx-legend .dot {
+          font-style: normal;
+        }
+        .empty {
+          padding: 36px 28px;
+        }
+        .empty .eyebrow {
+          margin-bottom: 10px;
+        }
+        .empty-body {
+          color: var(--body);
+          max-width: 520px;
+        }
+        /* ---------- detail ---------- */
+        /* detail container */
+        .dt-head h3 {
+          font-size: 18px;
+          line-height: 26px;
+          font-weight: 400;
+          letter-spacing: 0;
+          color: var(--ink);
+        }
+        .dt-meta {
+          font-size: 12px;
+          color: var(--mute);
+          margin: 4px 0 10px;
+        }
+        ul.dt-coaches {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+        }
+        .dt-coaches li {
+          position: relative;
+          padding: 0;
+          margin-top: 10px;
+          border-radius: 8px;
+          border: 1px solid transparent;
+          transition:
+            background 0.15s var(--ease-out),
+            border-color 0.15s var(--ease-out);
+        }
+        .dt-coaches li + li::before {
+          content: '';
+          position: absolute;
+          top: -6px;
+          left: 12px;
+          right: 12px;
+          height: 1px;
+          background: var(--hairline);
+        }
+        .dt-coaches li:first-child {
+          margin-top: 2px;
+        }
+        .dt-coaches .row-link {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 4px 12px;
+          align-items: start;
+          color: inherit;
+          text-decoration: none;
+          padding: 10px 12px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .dt-coaches a.row-link {
+          cursor: pointer;
+        }
+        .dt-coaches li.avail {
+          background: var(--tint-ok-subtle);
+          border-color: var(--ok-border);
+        }
+        .dt-coaches li.avail:hover {
+          background: var(--tint-ok);
+          border-color: var(--ok-border-hi);
+        }
+        .dt-coaches li.lowst {
+          background: var(--tint-low);
+          border-color: var(--low-border);
+        }
+        .dt-coaches li.lowst:hover {
+          background: var(--tint-low-md);
+          border-color: var(--low-border-hi);
+        }
+        .dt-coaches li.sold-out .cnt {
+          color: var(--mute);
+        }
+        .dt-coaches .ty {
+          grid-column: 1;
+          grid-row: 1;
+          font-size: 13.5px;
+          line-height: 1.35;
+          color: var(--ink);
+        }
+        .dt-coaches .go {
+          font-style: normal;
+          font-size: 11px;
+          color: var(--mute);
+          margin-left: 4px;
+          display: inline-block;
+          transition:
+            transform 0.15s ease-out,
+            color 0.15s ease-out;
+        }
+        .dt-coaches li:hover .go {
+          color: var(--ink);
+          transform: translate(2px, -2px);
+        }
+        .dt-coaches .cnt {
+          grid-column: 2;
+          grid-row: 1;
+          justify-self: end;
+          font: 400 16px/1.2 var(--font-mono);
+          transition:
+            color 0.15s ease-out,
+            transform 0.15s ease-out;
+        }
+        .dt-coaches .state {
+          grid-column: 2;
+          grid-row: 2;
+          justify-self: end;
+          font: 400 9.5px/1.2 var(--font-mono);
+          letter-spacing: 0.8px;
+          text-transform: uppercase;
+          color: var(--mute);
+          white-space: nowrap;
+          transition:
+            color 0.15s ease-out,
+            font-weight 0.15s ease-out;
+        }
+        .dt-coaches .prs {
+          grid-column: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+        .dt-coaches .pr {
+          font: 400 12px/1.4 var(--font-mono);
+          color: var(--body);
+          white-space: nowrap;
+          transition: color 0.15s ease-out;
+        }
+        .dt-coaches li:hover .pr {
+          color: var(--ink);
+        }
+        .dt-coaches li:hover .state {
+          color: var(--ink);
+          font-weight: 600;
+        }
+        .dt-coaches li:hover .ty {
+          color: var(--ink);
+          font-weight: 500;
+        }
+        .dt-notchecked {
+          margin-top: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          align-items: flex-start;
+        }
+        /* ---------- alerts ---------- */
+        .alerts {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .alerts header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .al-row {
+          display: flex;
+          gap: 10px;
+          align-items: flex-end;
+        }
+        .al-row .ln-input:first-child {
+          flex: 1;
+          min-width: 0;
+        }
+        .al-row input[type='number'] {
+          width: 44px;
+          flex: none;
+        }
+        .al-row .note {
+          flex: none;
+          padding-bottom: 5px;
+        }
+        .passenger-fields {
+          display: grid;
+          gap: 10px;
+          margin-top: 12px;
+        }
+        .passenger-fields[hidden] {
+          display: none;
+        }
+        .passenger-fields label,
+        .passenger-choice {
+          display: grid;
+          gap: 5px;
+          font: 400 12px/1.4 var(--font-ui);
+          color: var(--body);
+        }
+        .passenger-fields select,
+        .passenger-choice select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid var(--hairline);
+          border-radius: 6px;
+          background: var(--canvas);
+          color: var(--ink);
+          font: inherit;
+        }
+        .booking-summary {
+          display: grid;
+          gap: 10px;
+        }
+        .booking-summary .pill {
+          justify-self: start;
+        }
+        [hidden] {
+          display: none !important;
+        }
+        .booking-dialog {
+          box-sizing: border-box;
+          width: min(720px, calc(100vw - 32px));
+          height: min(860px, calc(100dvh - 24px));
+          max-height: calc(100dvh - 24px);
+          margin: auto;
+          padding: 22px 28px;
+          border: 1px solid var(--hairline);
+          border-radius: 10px;
+          background: var(--card);
+          color: var(--ink);
+          overflow: clip;
+        }
+        .booking-dialog.is-complete {
+          height: fit-content;
+        }
+        .watch-outcome {
+          padding-top: 20px;
+          min-height: 0;
+          overflow-y: auto;
+        }
+        .watch-outcome > p {
+          margin: 0;
+          font: 400 14px/1.6 var(--font-ui);
+          color: var(--body);
+        }
+        .watch-outcome dl {
+          display: grid;
+          gap: 20px;
+          margin: 20px 0;
+        }
+        .watch-outcome dl > div {
+          display: grid;
+          gap: 4px;
+        }
+        .watch-outcome dt {
+          font: 400 12px/1.5 var(--font-ui);
+          color: var(--mute);
+        }
+        .watch-outcome dd {
+          margin: 0;
+          font: 400 14px/1.5 var(--font-ui);
+          overflow-wrap: anywhere;
+        }
+        .watch-outcome dd strong {
+          font-weight: 500;
+        }
+        .watch-outcome .booking-dialog-actions {
+          border-top: 1px solid var(--hairline);
+          padding-top: 16px;
+        }
+        .watch-outcome button {
+          min-height: 44px;
+          padding: 0 12px;
+          border: 1px solid var(--mid);
+          border-radius: 6px;
+        }
+        .booking-watch-lock {
+          margin: 0;
+          color: var(--mute);
+          font: 400 12px/1.5 var(--font-ui);
+        }
+        .booking-dialog[open] {
+          display: flex;
+          flex-direction: column;
+        }
+        .booking-dialog::backdrop {
+          background: #0009;
+        }
+        .booking-dialog-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          flex: none;
+        }
+        .booking-tear {
+          height: 1px;
+          border-top: 1px dashed var(--mid);
+          margin: 14px -28px 0;
+          flex: none;
+        }
+        .booking-dialog-header h2 {
+          margin: 0;
+          font: 400 18px/1.4 var(--font-ui);
+        }
+        .booking-meta {
+          margin: 2px 0 0;
+        }
+        .booking-dialog-body {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin: 12px -4px -4px;
+          padding: 4px;
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+        }
+        .booking-dialog-body > * {
+          flex: none;
+        }
+        .booking-passengers {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          flex: 1 0 340px;
+          min-height: 340px;
+        }
+        .booking-passengers.is-compact {
+          flex: none;
+          min-height: 0;
+        }
+        .booking-passengers.is-compact .acc-item.open {
+          min-height: 0;
+        }
+        .booking-passengers > .passenger-actions,
+        .booking-passengers > #passengerHint {
+          flex: none;
+        }
+        .passenger-acc-scroll {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          padding-right: 2px;
+        }
+        .passenger-acc-scroll > .passenger-acc {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .passenger-actions {
+          flex-wrap: wrap;
+        }
+        .passenger-actions .note {
+          white-space: nowrap;
+        }
+        .tkt-row {
+          display: grid;
+          grid-template-columns: 150px minmax(0, 1fr);
+          gap: 16px;
+          align-items: center;
+          min-width: 0;
+        }
+        .tkt-row > span,
+        .tkt-row > label {
+          font: 400 11px/1.4 var(--font-mono);
+          letter-spacing: 0.8px;
+          text-transform: uppercase;
+          color: var(--mute);
+        }
+        .tkt-row select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid var(--hairline);
+          border-radius: 6px;
+          background: var(--canvas);
+          color: var(--ink);
+          font: 400 13px/1.4 var(--font-ui);
+        }
+        .booking-error {
+          color: var(--low-ink);
+          margin-top: 16px;
+        }
+        .booking-dialog-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid var(--hairline);
+          flex: none;
+        }
+        .booking-dialog-footer .note {
+          flex: 1 1 260px;
+          min-width: 0;
+        }
+        .booking-dialog-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          flex: 0 1 auto;
+          max-width: 100%;
+        }
+        .booking-dialog .ln-input {
+          box-sizing: border-box;
+          width: 100%;
+        }
+        .booking-return-date {
+          display: flex;
+          gap: 8px;
+          min-width: 0;
+        }
+        .booking-return-date .ln-input {
+          flex: 1;
+          min-width: 0;
+        }
+        .booking-return-date .pill-icon {
+          flex: none;
+        }
+        @media (max-width: 560px) {
+          .booking-dialog {
+            padding: 18px 20px;
+          }
+          .tkt-row {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 5px;
+          }
+          .tkt-row > span,
+          .tkt-row > label {
+            padding-top: 2px;
+          }
+          .booking-tear {
+            margin: 14px -20px 0;
+          }
+        }
+        .booking-leg {
+          display: grid;
+          gap: 12px;
+          margin: 0;
+          padding: 12px 0 0;
+          border: 0;
+          min-width: 0;
+        }
+        .booking-leg[hidden] {
+          display: none !important;
+        }
+        .booking-leg legend {
+          padding: 0 0 2px;
+          font: 500 13px/1.5 var(--font-ui);
+          color: var(--body);
+        }
+        .passenger-actions {
+          display: flex;
+          gap: 6px;
+          align-items: center;
+        }
+        .passenger-actions .note {
+          margin-left: 6px;
+        }
+        .passenger-acc {
+          display: grid;
+          gap: 8px;
+        }
+        .acc-item {
+          border: 1px solid var(--hairline);
+          border-radius: 8px;
+          background: var(--canvas);
+          overflow: clip;
+          transition:
+            border-color 150ms var(--ease-out),
+            flex-grow 200ms var(--ease-out),
+            flex-shrink 200ms var(--ease-out),
+            min-height 200ms var(--ease-out);
+          flex: none;
+          min-height: 0;
+        }
+        .acc-item.open {
+          border-color: var(--mid);
+          flex: 1 1 auto;
+          min-height: 180px;
+          display: flex;
+          flex-direction: column;
+        }
+        .acc-head {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          background: none;
+          border: 0;
+          padding: 11px 14px;
+          cursor: pointer;
+          color: var(--ink);
+          font-size: 13px;
+          text-align: left;
+          flex: none;
+        }
+        .acc-head:hover {
+          background:
+            linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03)), var(--canvas);
+        }
+        .acc-head:disabled {
+          opacity: 0.5;
+          cursor: default;
+        }
+        .acc-head:disabled:hover {
+          background: none;
+        }
+        .acc-chev {
+          flex: none;
+          color: var(--mute);
+          transition: transform 180ms var(--ease-out);
+          display: inline-flex;
+        }
+        .acc-item.open .acc-chev {
+          transform: rotate(180deg);
+        }
+        .acc-sum {
+          margin-left: auto;
+          color: var(--mute);
+          font-size: 11.5px;
+        }
+        .acc-panel {
+          display: grid;
+          grid-template-rows: 0fr;
+          flex: 1 1 auto;
+          min-height: 0;
+          transition: grid-template-rows 200ms var(--ease-out);
+        }
+        .acc-item.open .acc-panel {
+          grid-template-rows: 1fr;
+        }
+        .acc-clip {
+          overflow: hidden;
+          min-height: 0;
+        }
+        .acc-inner {
+          overflow-y: auto;
+          max-height: 100%;
+          padding: 2px 14px 14px;
+          display: grid;
+          gap: 10px;
+        }
+        .signin-warning {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin: 12px 0 0;
+          padding: 10px 12px;
+          border: 1px solid #eab30880;
+          border-radius: 6px;
+          background: #eab30814;
+          color: #fde047;
+          font: 400 12px/1.5 var(--font-ui);
+        }
+        .signin-warning span {
+          flex: 1;
+          min-width: 160px;
+        }
+        .signin-warning .pill {
+          color: inherit;
+          border-color: currentColor;
+          flex: none;
+        }
+        [data-theme='light'] .signin-warning {
+          background: #fef9c3;
+          color: #713f12;
+          border-color: #eab308;
+        }
+        .ln-input {
+          background: transparent;
+          border: 0;
+          border-bottom: 1px solid var(--hairline);
+          border-radius: 0;
+          color: var(--ink);
+          font: 400 13px/1.4 var(--font-mono);
+          padding: 6px 2px;
+          transition: border-color 0.15s var(--ease-out);
+        }
+        .ln-input:hover {
+          border-bottom-color: var(--pill);
+        }
+        .ln-input:focus {
+          outline: none;
+          border-bottom-color: var(--focus);
+        }
+        .ln-input::placeholder {
+          color: var(--mute);
+        }
+        [data-theme='dark'] .ln-input::-webkit-calendar-picker-indicator {
+          filter: invert(0.75);
+        }
+        /* ---------- history ---------- */
+        .hist-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 6px;
+        }
+        .hist-toggle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-height: 28px;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: var(--ink);
+          font: inherit;
+          text-align: left;
+          cursor: pointer;
+        }
+        .hist-toggle svg {
+          flex: none;
+          color: var(--mute);
+          transition: transform 200ms var(--ease-out);
+        }
+        .hist-toggle[aria-expanded='false'] svg {
+          transform: rotate(-90deg);
+        }
+        .hist-scroll {
+          max-height: 220px;
+          overflow: auto;
+          border: 1px solid var(--hairline);
+          border-radius: 8px;
+          margin-top: 10px;
+          scrollbar-width: none;
+        }
+        .hist-scroll::-webkit-scrollbar {
+          width: 5px;
+          height: 5px;
+        }
+        .hist-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .hist-scroll::-webkit-scrollbar-thumb {
+          background: transparent;
+          border-radius: 9999px;
+          transition: background 0.2s ease-out;
+        }
+        .hist-scroll:hover,
+        .hist-scroll:focus-within,
+        .hist-scroll:active,
+        .hist-scroll.is-scrolling {
+          scrollbar-width: thin;
+          scrollbar-color: var(--pill) transparent;
+        }
+        .hist-scroll:hover::-webkit-scrollbar-thumb,
+        .hist-scroll:focus-within::-webkit-scrollbar-thumb,
+        .hist-scroll:active::-webkit-scrollbar-thumb,
+        .hist-scroll.is-scrolling::-webkit-scrollbar-thumb {
+          background: var(--pill);
+        }
+        .hist-scroll:hover::-webkit-scrollbar-thumb:hover {
+          background: var(--mute);
+        }
+        .hist-scroll table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .hist-scroll th {
+          position: sticky;
+          top: 0;
+          background: var(--card);
+          font: 400 10px/1.4 var(--font-mono);
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
+          color: var(--mute);
+          text-align: left;
+          padding: 8px 10px;
+          border-bottom: 1px solid var(--hairline);
+        }
+        .hist-scroll td {
+          font-size: 12px;
+          padding: 6px 10px;
+          border-bottom: 1px solid var(--hairline);
+          color: var(--body);
+        }
+        .hist-scroll td.mono {
+          font-size: 11.5px;
+        }
+        .hist-scroll .ta-r {
+          text-align: right;
+        }
+        .hist-empty {
+          color: var(--mute);
+          text-align: center;
+          padding: 22px 10px;
+        }
+
+        ::selection {
+          background: rgba(59, 130, 246, 0.4);
+          color: #ffffff;
+        }
+        [data-theme='light'] ::selection {
+          background: #2563eb;
+          color: #ffffff !important;
+        }
+
+        /* custom high-contrast hover tooltip */
+        #sw-tip {
+          position: fixed;
+          margin: 0;
+          inset: auto;
+          z-index: 999999;
+          pointer-events: none;
+          padding: 5px 9px;
+          border-radius: 6px;
+          font: 500 11.5px/1.3 var(--font-mono);
+          letter-spacing: 0.3px;
+          white-space: normal;
+          max-width: min(340px, calc(100vw - 24px));
+          overflow-wrap: anywhere;
+          background: #18191d;
+          color: #ffffff !important;
+          border: 1px solid rgba(255, 255, 255, 0.28);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7);
+          opacity: 0;
+          transform: translateY(3px);
+          transition:
+            opacity 0.1s var(--ease-out),
+            transform 0.1s var(--ease-out);
+        }
+        [data-theme='light'] #sw-tip {
+          background: #18191d;
+          color: #ffffff !important;
+          border: 1px solid rgba(0, 0, 0, 0.85);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+        #sw-tip.on {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        [data-theme='dark'] .mx-cell:hover b,
+        [data-theme='dark'] .mx-cell:hover i {
+          color: #ffffff !important;
+        }
+        [data-theme='light'] .mx-cell:hover b,
+        [data-theme='light'] .mx-cell:hover i {
+          color: #101114 !important;
+        }
+        [data-theme='dark'] .mx-t tbody tr:hover th.mx-date {
+          color: #ffffff !important;
+        }
+        [data-theme='light'] .mx-t tbody tr:hover th.mx-date {
+          color: #101114 !important;
+        }
+        [data-theme='dark'] .chk:hover span {
+          color: #ffffff !important;
+        }
+        [data-theme='light'] .chk:hover span {
+          color: #101114 !important;
+        }
+        [data-theme='dark'] .pill:hover:not(:disabled) {
+          color: #ffffff !important;
+        }
+        [data-theme='light'] .pill:hover:not(:disabled) {
+          color: #101114 !important;
+        }
+        [data-theme='dark'] .ug-swap:hover {
+          color: #ffffff !important;
+        }
+        [data-theme='light'] .ug-swap:hover {
+          color: #101114 !important;
+        }
+        [data-theme='light'] button:active,
+        [data-theme='light'] .seg-b:active,
+        [data-theme='light'] .pill:active {
+          color: #101114 !important;
+        }
+
+        /* ---------- accent palette footer ---------- */
+        .ck-palette-footer {
+          margin-top: auto;
+          padding-top: 14px;
+          border-top: 1px solid var(--hairline);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .ck-palette-head {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          line-height: 1.2;
+        }
+        .ck-palette-label {
+          font-family: var(--font-mono);
+          font-size: 11.5px;
+          color: var(--ink);
+          letter-spacing: 0.2px;
+        }
+        .palette-swatches {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .palette-btn {
+          width: 26px;
+          height: 26px;
+          border-radius: 9999px;
+          border: 1px solid var(--hairline);
+          padding: 0;
+          background: transparent;
+          cursor: pointer;
+          display: flex;
+          overflow: hidden;
+          position: relative;
+          transition:
+            transform 0.15s ease-out,
+            border-color 0.15s ease-out,
+            box-shadow 0.15s ease-out;
+          flex: none;
+        }
+        .palette-btn:hover {
+          transform: scale(1.15);
+          border-color: var(--ink);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+          z-index: 2;
+        }
+        .palette-btn[data-on='true'] {
+          outline: 2px solid var(--ink);
+          outline-offset: 2px;
+          border-color: transparent;
+          transform: scale(1.06);
+        }
+        .palette-btn .sw-half {
+          flex: 1;
+          height: 100%;
+          pointer-events: none;
+        }
+
+        /* ---------- entrance ---------- */
+        /* ---------- cockpit shell ---------- */
+        .v-cockpit {
+          display: grid;
+          grid-template-columns: 264px minmax(0, 1fr) 320px;
+          height: 100vh;
+          background: var(--canvas);
+          transition: grid-template-columns 200ms var(--ease-out);
+        }
+        .ck-side,
+        .ck-rail {
+          overflow-y: auto;
+          padding: 22px;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+          scrollbar-width: thin;
+        }
+        .ck-side {
+          border-right: 1px solid var(--hairline);
+          gap: 24px;
+          min-width: 0;
+          transition:
+            opacity 150ms var(--ease-out),
+            visibility 200ms allow-discrete,
+            display 200ms allow-discrete;
+        }
+        @starting-style {
+          .ck-side {
+            opacity: 0;
+          }
+        }
+        .ck-brand {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
+        .ug {
+          position: relative;
+        }
+        .ug-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 9px 0;
+          border-bottom: 1px solid var(--hairline);
+          transition: border-color 0.15s var(--ease-out);
+        }
+        .ug-row:hover {
+          border-bottom-color: var(--pill);
+        }
+        .ug-row:focus-within {
+          border-bottom-color: var(--focus);
+        }
+        .ug-row svg {
+          flex: none;
+          color: var(--mute);
+        }
+        .ug-row .ac {
+          flex: 1;
+          min-width: 0;
+          padding-right: 44px;
+        }
+        .ug-row input {
+          width: 100%;
+          background: transparent;
+          border: 0;
+          color: var(--ink);
+          font: 400 15px/1.4 var(--font-ui);
+          padding: 2px 0;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+        .ug-row input:focus {
+          outline: none;
+        }
+        .ug-row input[type='date'] {
+          font-family: var(--font-mono);
+        }
+        [data-theme='dark'] .ug-row input[type='date']::-webkit-calendar-picker-indicator {
+          filter: invert(0.75);
+        }
+        .ug-swap {
+          position: absolute;
+          right: 0;
+          top: 20px;
+          width: 38px;
+          height: 38px;
+          border: 1px solid var(--hairline);
+          border-radius: 12px;
+          background: var(--canvas);
+          color: var(--ink);
+          cursor: pointer;
+          font: 400 15px/1 var(--font-mono);
+          z-index: 2;
+          transition:
+            border-color 0.15s var(--ease-out),
+            transform 0.32s cubic-bezier(0.34, 1.4, 0.64, 1),
+            color 0.15s ease-out;
+        }
+        .ug-swap:hover {
+          border-color: var(--focus);
+          color: var(--ink);
+        }
+        .ug-swap:active {
+          border-color: var(--ink);
+          color: var(--ink);
+        }
+        .ug-swap:active {
+          transform: scale(0.96);
+        }
+        .ug-dash {
+          flex: none;
+          color: var(--mute);
+          padding: 0 2px;
+        }
+        .ug-date {
+          position: relative;
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          min-height: 26px;
+          cursor: pointer;
+        }
+        .ug-date input {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          cursor: pointer;
+          margin: 0;
+        }
+        .ug-date .ug-date-txt {
+          font: 400 13.5px/1.4 var(--font-ui);
+          color: var(--ink);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .ug-date:focus-within .ug-date-txt {
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+        .ck-group {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .ck-form {
+          gap: 0;
+        }
+        .ck-group > .eyebrow {
+          font: 400 12px/1.4 var(--font-ui);
+          letter-spacing: 0;
+          text-transform: none;
+          color: var(--mute);
+          border-bottom: 0;
+          padding-bottom: 0;
+        }
+        .alerts header .eyebrow,
+        .hist-head .eyebrow {
+          font: 400 13px/1.4 var(--font-ui);
+          letter-spacing: 0;
+          text-transform: none;
+          color: var(--ink);
+        }
+        .ck-main {
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          padding: 0 26px 20px;
+          scrollbar-width: thin;
+        }
+        .ck-status {
+          flex: none;
+          padding: 14px 0 12px;
+          border-bottom: 1px solid var(--hairline);
+          margin-bottom: 12px;
+        }
+        .ck-matrix {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+        }
+        .ck-matrix .mx {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .ck-matrix .mx-scroll {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow: auto;
+          display: flex;
+          flex-direction: column;
+        }
+        .ck-rail {
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border-left: 1px solid var(--hairline);
+          padding: 0;
+        }
+        .ck-rail > [data-region='detail'] {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          padding: 0 20px 12px;
+        }
+        .ck-rail .dt-head {
+          position: sticky;
+          top: 0;
+          z-index: 1;
+          background: var(--canvas);
+          margin: 0 -20px;
+          padding: 20px 20px 1px;
+        }
+        .ck-logcard {
+          flex: 0 0 33.333%;
+          min-height: 0;
+          display: flex;
+          background: var(--card);
+          border: 0;
+          border-top: 1px solid var(--hairline);
+          border-radius: 0;
+          padding: 14px 20px 16px;
+          overflow: hidden;
+          transition: flex-basis 200ms var(--ease-out);
+        }
+        .ck-logcard .hist {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .ck-logcard .hist-scroll {
+          flex: 1 1 auto;
+          min-height: 0;
+          max-height: none;
+          margin-top: 16px;
+          transition:
+            opacity 200ms var(--ease-out),
+            display 200ms allow-discrete;
+        }
+        .ck-logcard .hist-scroll[hidden] {
+          opacity: 0;
+        }
+        @starting-style {
+          .ck-logcard .hist-scroll {
+            opacity: 0;
+          }
+        }
+        .ck-logcard .hist-head {
+          flex: none;
+          margin-bottom: 0;
+        }
+        .ck-logcard:has(.hist-toggle[aria-expanded='false']) {
+          flex-basis: 59px;
+        }
+        @media (max-width: 1180px) {
+          body {
+            overflow: auto;
+          }
+          .v-cockpit {
+            display: block;
+            height: auto;
+          }
+          .ck-side,
+          .ck-rail {
+            border: 0;
+            border-bottom: 1px solid var(--hairline);
+            overflow: visible;
+            display: block;
+          }
+          .ck-rail > [data-region='detail'] {
+            overflow: visible;
+            padding: 20px;
+          }
+          .ck-rail .dt-head {
+            position: static;
+            margin: 0;
+            padding: 0;
+          }
+          .ck-logcard {
+            max-height: 320px;
+            border: 1px solid var(--hairline);
+            border-radius: 8px;
+            margin: 20px;
+            padding: 14px;
+            transition: max-height 200ms var(--ease-out);
+          }
+          .ck-logcard:has(.hist-toggle[aria-expanded='false']) {
+            max-height: 58px;
+          }
+          .ck-logcard .hist-scroll {
+            max-height: 260px;
+          }
+        }
+        /* ---------- reduced motion ---------- */
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          *::before,
+          *::after {
+            animation: none !important;
+            transition: none !important;
+          }
+        }
+      </style>
+      <section class="v v-cockpit" id="cockpit">
+        <button
+          type="button"
+          class="sidebar-toggle"
+          id="sidebarToggle"
+          aria-label="Collapse sidebar"
+          title="Collapse sidebar"
+          aria-expanded="true"
+          aria-controls="sidebar"
+        ></button>
+        <aside class="ck-side" id="sidebar">
+          <div class="ck-brand">
+            <span class="eyebrow ink">Seat Watch</span
+            ><button
+              class="pill pill-icon"
+              id="themeToggle"
+              data-action="theme"
+              aria-label="Toggle light/dark theme"
+              title="Toggle theme"
+            >
+              ◐
+            </button>
+          </div>
+          <div class="ck-group ck-form">
+            <div class="ug route-picker" data-watch-lock>
+              <div class="ug-row">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="5" y="3" width="14" height="13" rx="3" />
+                  <path d="M5 9h14M9 13h.01M15 13h.01M8 16l-2 4M16 16l2 4" /></svg
+                ><span class="ac"
+                  ><input
+                    data-input="from"
+                    id="origin"
+                    autocomplete="off"
+                    aria-label="Origin station"
+                    placeholder="Origin station" />
+                  <div class="ac-list" id="originOptions" hidden></div
+                ></span>
+              </div>
+              <button class="ug-swap" id="swap" aria-label="Swap route" title="Swap route">
+                ↑↓
+              </button>
+              <div class="ug-row">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="5" y="3" width="14" height="13" rx="3" />
+                  <path d="M5 9h14M9 13h.01M15 13h.01M8 16l-2 4M16 16l2 4" /></svg
+                ><span class="ac"
+                  ><input
+                    data-input="to"
+                    id="destination"
+                    autocomplete="off"
+                    aria-label="Destination station"
+                    placeholder="Destination station" />
+                  <div class="ac-list" id="destinationOptions" hidden></div
+                ></span>
+              </div>
+            </div>
+            <div class="ug dates-picker" id="dateRange" data-watch-lock>
+              <div class="ug-row">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="5" y="5" width="14" height="15" rx="2" />
+                  <path d="M15 3v4M9 3v4M5 10h14" /></svg
+                ><span class="ug-date"
+                  ><input
+                    type="date"
+                    id="from"
+                    tabindex="-1"
+                    aria-hidden="true"
+                    data-input="start"
+                    aria-label="Start date" /><button
+                    type="button"
+                    class="date-trigger"
+                    id="fromCalendar"
+                    aria-label="Start date"
+                    aria-haspopup="dialog"
+                    aria-controls="dateCalendar"
+                  ></button
+                  ><span class="ug-date-txt" data-dtxt="start" aria-hidden="true"></span></span
+                ><span class="ug-dash">–</span
+                ><span class="ug-date"
+                  ><input
+                    type="date"
+                    id="through"
+                    tabindex="-1"
+                    aria-hidden="true"
+                    data-input="end"
+                    aria-label="End date" /><button
+                    type="button"
+                    class="date-trigger"
+                    id="throughCalendar"
+                    aria-label="End date"
+                    aria-haspopup="dialog"
+                    aria-controls="dateCalendar"
+                  ></button
+                  ><span class="ug-date-txt" data-dtxt="end" aria-hidden="true"></span
+                ></span>
+              </div>
+              <div id="rangeHint" class="sr-only" aria-live="polite"></div>
+            </div>
+          </div>
+          <div class="ck-group">
+            <span class="eyebrow">Travel classes</span>
+            <div class="chk-list" id="filter" data-watch-lock>
+              <label class="chk"
+                ><input type="checkbox" value="1" data-chk="1" checked /><span>Class 1</span></label
+              >
+              <label class="chk"
+                ><input type="checkbox" value="2" data-chk="2" checked /><span>Class 2</span></label
+              >
+              <label class="chk"
+                ><input type="checkbox" value="3" data-chk="3" checked /><span>Class 3</span></label
+              >
+              <label class="chk"
+                ><input type="checkbox" value="sleep" data-chk="sleep" checked /><span
+                  >Sleepers</span
+                ></label
+              >
+            </div>
+          </div>
+          <div class="ck-group">
+            <span class="eyebrow">Scan cadence</span>
+            <div class="seg" role="group" aria-label="Automatic scan cadence">
+              <button class="seg-b" data-action="cadence" data-val="5">5 min</button
+              ><button class="seg-b" data-action="cadence" data-val="10">10</button
+              ><button class="seg-b" data-action="cadence" data-val="15" data-on>15</button>
+            </div>
+            <select id="interval" hidden>
+              <option value="300000">5</option>
+              <option value="600000">10</option>
+              <option value="900000" selected>15</option>
+            </select>
+          </div>
+          <div class="ck-group booking-summary">
+            <button
+              type="button"
+              class="pill pill-sm"
+              id="bookingSetup"
+              aria-haspopup="dialog"
+              aria-controls="bookingSetupDialog"
+            >
+              Booking setup
+            </button>
+          </div>
+          <div class="ck-group" id="alertsRegion">
+            <section class="alerts" id="alertsPanel" aria-label="Seat alerts">
+              <header>
+                <span class="eyebrow ink">Seat alerts</span
+                ><button
+                  class="switch"
+                  id="alertSwitch"
+                  role="switch"
+                  aria-checked="false"
+                  data-action="alert-toggle"
+                  aria-label="Toggle seat alerts"
+                >
+                  <span class="knob"></span>
+                </button>
+              </header>
+              <div class="alerts-body">
+                <details class="train-picker" id="alertTrainPicker">
+                  <summary aria-label="Choose alert trains">
+                    <span id="alertTrainLabel">All trains</span
+                    ><svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </summary>
+                  <div class="train-options" role="group" aria-label="Alert train numbers">
+                    <label class="chk"
+                      ><input
+                        type="checkbox"
+                        data-chk-all
+                        checked
+                        aria-label="Alert on all trains"
+                      /><span>All trains</span></label
+                    >
+                    <div id="alertTrainOptions"></div>
+                  </div>
+                </details>
+                <input id="alertTrains" type="hidden" value="" />
+                <div class="al-row">
+                  <input
+                    class="ln-input mono"
+                    id="alertMinimum"
+                    type="number"
+                    min="1"
+                    max="99"
+                    value="1"
+                    aria-label="Minimum seats"
+                  /><span class="note" style="white-space: nowrap; padding-bottom: 5px"
+                    >min. seats</span
+                  >
+                </div>
+                <select id="alertsEnabled" hidden>
+                  <option value="off">Off</option>
+                  <option value="on">On</option>
+                </select>
+                <p id="alertError" class="note" hidden role="status"></p>
+              </div>
+            </section>
+          </div>
+          <div class="ck-palette-footer">
+            <div class="ck-palette-head">
+              <span class="eyebrow">Accent palette</span
+              ><span class="ck-palette-label" id="palette-label">Platinum &amp; Brass</span>
+            </div>
+            <div class="palette-swatches" role="radiogroup" aria-label="Accent palette">
+              <button
+                class="palette-btn"
+                data-action="accent"
+                data-val="brass"
+                data-name="Platinum &amp; Brass"
+                data-on="true"
+                title="Platinum &amp; Brass"
+                aria-label="Platinum &amp; Brass"
+              >
+                <span class="sw-half" style="background: #e2e8f0"></span
+                ><span class="sw-half" style="background: #eab308"></span>
+              </button>
+              <button
+                class="palette-btn"
+                data-action="accent"
+                data-val="cyan"
+                data-name="Cyan &amp; Magenta"
+                data-on="false"
+                title="Cyan &amp; Magenta"
+                aria-label="Cyan &amp; Magenta"
+              >
+                <span class="sw-half" style="background: #06b6d4"></span
+                ><span class="sw-half" style="background: #f43f5e"></span>
+              </button>
+              <button
+                class="palette-btn"
+                data-action="accent"
+                data-val="forest"
+                data-name="Forest &amp; Sunburst"
+                data-on="false"
+                title="Forest &amp; Sunburst"
+                aria-label="Forest &amp; Sunburst"
+              >
+                <span class="sw-half" style="background: #10b981"></span
+                ><span class="sw-half" style="background: #f59e0b"></span>
+              </button>
+              <button
+                class="palette-btn"
+                data-action="accent"
+                data-val="plum"
+                data-name="Plum &amp; Apricot"
+                data-on="false"
+                title="Plum &amp; Apricot"
+                aria-label="Plum &amp; Apricot"
+              >
+                <span class="sw-half" style="background: #a855f7"></span
+                ><span class="sw-half" style="background: #fb923c"></span>
+              </button>
+            </div>
+          </div>
+        </aside>
+        <main class="ck-main">
+          <div class="ck-status" id="statusRegion">
+            <div class="status" role="status" aria-live="polite">
+              <span class="chip chip-snap" id="demoChip" hidden>Demo data</span>
+              <div class="status-copy">
+                <span class="mono st" id="statusText">Choose origin and destination stations</span
+                ><span class="mono st" id="nextCheckText">Not scheduled</span>
+              </div>
+              <div class="status-actions">
+                <button
+                  class="pill pill-sm pill-icon"
+                  id="refresh"
+                  aria-label="Check now"
+                  title="Check now"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg></button
+                ><button
+                  class="pill pill-sm pill-icon"
+                  id="pause"
+                  aria-label="Pause scanning"
+                  title="Pause scanning"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                  </svg></button
+                ><button
+                  type="button"
+                  class="pill pill-sm pill-icon"
+                  id="close"
+                  aria-label="Close dashboard"
+                  title="Close dashboard"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 6 12 12M18 6 6 18" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="signInWarning" class="signin-warning" role="status" hidden>
+              <span>Not signed in to D-Ticket. Sign in before booking.</span
+              ><button
+                type="button"
+                class="pill pill-sm"
+                id="signInButton"
+                title="Close the dashboard and open D-Ticket sign-in"
+              >
+                Sign in
+              </button>
+            </div>
+            <p id="availabilityNotice" class="availability-notice" role="status" hidden></p>
+          </div>
+          <section
+            class="watch-banner"
+            id="watchBanner"
+            aria-label="Booking watch"
+            tabindex="-1"
+            hidden
+          >
+            <div class="watch-banner-copy" role="status" aria-live="polite">
+              <strong id="watchBannerTitle">Watching for seats</strong>
+              <p id="watchBannerText"></p>
+              <div class="watch-banner-detail">
+                <p id="watchBannerMeta"></p>
+                <p id="watchLockHint">Cancel watch to edit.</p>
+              </div>
+            </div>
+            <div class="watch-banner-actions">
+              <button type="button" class="watch-action" id="watchBannerView">View choices</button>
+              <button type="button" class="watch-action" id="watchBannerPause">Pause watch</button>
+              <button type="button" class="watch-action" id="watchBannerCancel">
+                Cancel watch
+              </button>
+              <button
+                type="button"
+                class="watch-action watch-dismiss"
+                id="watchBannerClose"
+                aria-label="Dismiss watch result"
+                hidden
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="m6 6 12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
+          </section>
+          <div class="ck-matrix" id="matrix" data-region="matrix"></div>
+        </main>
+        <aside class="ck-rail">
+          <div id="detail" data-region="detail">
+            <div class="dt-in">
+              <header class="dt-head"><h3>Select a train</h3></header>
+              <div class="dt-notchecked">
+                <p class="note">
+                  Choose a cell to see the coaches, seat counts and booking options.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="card ck-logcard">
+            <section class="hist" aria-label="Availability history">
+              <header class="hist-head">
+                <button
+                  type="button"
+                  class="hist-toggle"
+                  id="historyToggle"
+                  aria-expanded="true"
+                  aria-controls="historyTable"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" /></svg
+                  ><span class="eyebrow ink">Availability history</span></button
+                ><button
+                  class="pill pill-sm pill-icon"
+                  id="clearLog"
+                  aria-label="Clear availability history"
+                  title="Clear availability history"
+                  disabled
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path
+                      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    ></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
+              </header>
+              <div class="hist-scroll" id="historyTable">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Date</th>
+                      <th>Train</th>
+                      <th class="ta-r">Seats</th>
+                    </tr>
+                  </thead>
+                  <tbody id="availabilityLog">
+                    <tr>
+                      <td colspan="4" class="hist-empty">No entries yet</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </section>
+
+      <dialog id="bookingSetupDialog" class="booking-dialog" aria-labelledby="bookingSetupHeading">
+        <header class="booking-dialog-header">
+          <div class="booking-heading">
+            <h2 id="bookingSetupHeading">Booking setup</h2>
+            <p class="note booking-meta" id="bookingMeta"></p>
+          </div>
+          <button
+            type="button"
+            class="pill pill-icon"
+            id="bookingSetupClose"
+            aria-label="Close booking setup"
+          >
+            ×
+          </button>
+        </header>
+        <div class="booking-tear" aria-hidden="true"></div>
+        <div
+          class="watch-outcome"
+          id="watchOutcome"
+          role="group"
+          tabindex="-1"
+          aria-labelledby="bookingSetupHeading"
+          aria-describedby="watchOutcomeMessage"
+          hidden
+        >
+          <p id="watchOutcomeMessage"></p>
+          <dl id="watchOutcomeTrips"></dl>
+          <div class="booking-dialog-actions">
+            <button type="button" class="watch-action" id="watchOutcomeDone">
+              Back to dashboard
+            </button>
+            <button type="button" class="watch-action" id="watchOutcomeEdit">Edit choices</button>
+          </div>
+        </div>
+        <div class="booking-dialog-body" id="bookingSetupFields">
+          <p class="booking-watch-lock" id="bookingWatchLockHint" hidden>
+            Choices and passenger details are locked while watching. Cancel the watch to edit.
+          </p>
+          <label class="tkt-row" for="bookingTripType"
+            ><span>Journey</span
+            ><select id="bookingTripType">
+              <option value="1">One way</option>
+              <option value="2">Round trip</option>
+            </select></label
+          >
+          <fieldset class="booking-leg" data-watch-lock>
+            <legend id="outboundRoute">Outbound</legend>
+            <label class="tkt-row" for="watchDate" id="watchDateRow"
+              ><span>Departure date</span
+              ><select id="watchDate"></select
+            ></label>
+            <div id="watchDateChoices">
+              <div class="tkt-row">
+                <label for="watchDatesCalendar">Departure dates</label>
+                <button
+                  type="button"
+                  class="watch-dates-trigger"
+                  id="watchDatesCalendar"
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                  aria-controls="dateCalendar"
+                >
+                  <span id="watchDatesText">Choose dates</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                    <path d="M16 3v4M8 3v4M3 11h18"></path>
+                  </svg>
+                </button>
+              </div>
+              <p class="note">
+                The same choices apply to each date. The earliest available date opens one booking.
+              </p>
+            </div>
+            <div class="watch-choice-heading">
+              <span>Train and coach choices</span>
+              <div class="watch-choice-tools">
+                <span id="watchChoiceCount" class="note">0 choices selected</span>
+                <button
+                  type="button"
+                  class="watch-quick-trigger"
+                  id="outboundQuickSelect"
+                  aria-controls="outboundQuickMenu"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  aria-label="Quick select outbound coaches"
+                >
+                  Quick select
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                  >
+                    <path d="m4 6 4 4 4-4"></path>
+                  </svg>
+                </button>
+                <div
+                  popover="manual"
+                  class="watch-quick-menu"
+                  id="outboundQuickMenu"
+                  role="menu"
+                  aria-label="Quick select outbound coaches"
+                >
+                  <button type="button" id="outboundSleepers" role="menuitem">Sleepers</button>
+                  <button type="button" id="outboundAllChoices" role="menuitem">All coaches</button>
+                  <button type="button" id="outboundClearChoices" role="menuitem">
+                    Clear selection
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p class="note">Select the coaches you would take, even if sold out.</p>
+            <div
+              class="watch-choice-list"
+              id="watchChoices"
+              aria-label="Outbound train and coach choices"
+            ></div>
+          </fieldset>
+          <fieldset class="booking-leg" data-watch-lock id="returnLegFields" hidden>
+            <legend id="returnRoute">Return</legend>
+            <div class="tkt-row">
+              <label for="returnDate">Return date</label>
+              <div class="booking-return-date">
+                <input class="ln-input" id="returnDate" type="date" />
+                <button
+                  type="button"
+                  class="pill pill-sm pill-icon"
+                  id="loadReturn"
+                  aria-label="Load return trains"
+                  data-tip="Load trains for the return date"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 11a8 8 0 1 0-2.5 6M20 4v7h-7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="watch-choice-heading">
+              <span>Return choices</span>
+              <div class="watch-choice-tools">
+                <span id="returnChoiceCount" class="note">0 choices selected</span>
+                <button
+                  type="button"
+                  class="watch-quick-trigger"
+                  id="returnQuickSelect"
+                  aria-controls="returnQuickMenu"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  aria-label="Quick select return coaches"
+                >
+                  Quick select
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                  >
+                    <path d="m4 6 4 4 4-4"></path>
+                  </svg>
+                </button>
+                <div
+                  popover="manual"
+                  class="watch-quick-menu"
+                  id="returnQuickMenu"
+                  role="menu"
+                  aria-label="Quick select return coaches"
+                >
+                  <button type="button" id="returnSleepers" role="menuitem">Sleepers</button>
+                  <button type="button" id="returnAllChoices" role="menuitem">All coaches</button>
+                  <button type="button" id="returnClearChoices" role="menuitem">
+                    Clear selection
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div
+              class="watch-choice-list"
+              id="returnChoices"
+              aria-label="Return train and coach choices"
+            ></div>
+          </fieldset>
+          <label class="booking-preference" data-watch-lock>
+            <input type="checkbox" id="preferLowerBerths" checked />
+            <span>Prefer available lower berths in sleepers</span>
+          </label>
+          <div class="tkt-group booking-passengers" id="bookingPassengers" data-watch-lock>
+            <div class="passenger-actions">
+              <span class="eyebrow">Passengers</span>
+              <button
+                type="button"
+                class="pill pill-icon pill-sm"
+                id="removePassenger"
+                aria-label="Remove passenger"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                class="pill pill-icon pill-sm"
+                id="addPassenger"
+                aria-label="Add passenger"
+              >
+                +
+              </button>
+              <p class="note" id="passengerCount">1 passenger</p>
+            </div>
+            <select id="passengerSelect" aria-label="Edit passenger" hidden></select>
+            <div class="passenger-acc-scroll">
+              <div class="passenger-acc" id="passengerAccordion"></div>
+              <div id="passengerEditor" hidden>
+                <label class="passenger-choice" for="passengerMode"
+                  >Fill details from<select id="passengerMode">
+                    <option value="account">Logged-in account holder</option>
+                    <option value="custom">Enter passenger details</option>
+                    <option value="manual">Fill on D-Ticket</option>
+                  </select></label
+                >
+                <div class="passenger-fields" id="passengerFields" hidden>
+                  <label for="passengerFirstName"
+                    >First name<input
+                      class="ln-input"
+                      id="passengerFirstName"
+                      autocomplete="off"
+                      maxlength="100"
+                  /></label>
+                  <label for="passengerLastName"
+                    >Last name<input
+                      class="ln-input"
+                      id="passengerLastName"
+                      autocomplete="off"
+                      maxlength="100"
+                  /></label>
+                  <label for="passengerGender"
+                    >Gender<select id="passengerGender">
+                      <option value="M">Male</option>
+                      <option value="F">Female</option>
+                    </select></label
+                  >
+                  <label for="passengerIdType"
+                    >ID type<select id="passengerIdType">
+                      <option value="N">Thai ID</option>
+                      <option value="Y">Passport</option>
+                    </select></label
+                  >
+                  <label for="passengerId"
+                    >ID or passport number<input
+                      class="ln-input"
+                      id="passengerId"
+                      autocomplete="off"
+                      maxlength="20"
+                  /></label>
+                  <label for="passengerPhone"
+                    >Phone number<input
+                      class="ln-input"
+                      id="passengerPhone"
+                      type="tel"
+                      autocomplete="off"
+                      maxlength="20"
+                  /></label>
+                  <label for="passengerEmail"
+                    >Email, optional<input
+                      class="ln-input"
+                      id="passengerEmail"
+                      type="email"
+                      autocomplete="off"
+                      maxlength="100"
+                  /></label>
+                  <p class="note">Details are saved in this browser.</p>
+                </div>
+              </div>
+            </div>
+            <p class="note" id="passengerHint">Review passenger details on D-Ticket.</p>
+          </div>
+        </div>
+        <p id="bookingSetupError" class="note booking-error" role="alert" hidden></p>
+        <footer class="booking-dialog-footer" id="bookingSetupFooter">
+          <p class="note" id="watchStatus" role="status">Choose a coach to watch for your group.</p>
+          <div class="booking-dialog-actions">
+            <button type="button" class="pill pill-sm" id="cancelWatch" hidden>Cancel watch</button>
+            <button type="button" class="pill pill-sm" id="bookNow">Book now</button>
+            <button type="button" class="pill pill-sm" id="armWatch">Watch for a seat</button>
+            <button type="button" class="pill pill-sm" id="bookingSetupDone">Done</button>
+          </div>
+        </footer>
+      </dialog>
+
+      <dialog id="dateCalendar" class="date-calendar" aria-labelledby="calendarMonth">
+        <div class="calendar-header">
+          <button
+            type="button"
+            class="pill pill-icon"
+            id="calendarPrev"
+            aria-label="Previous month"
+          >
+            ‹</button
+          ><span id="calendarMonth"></span
+          ><button type="button" class="pill pill-icon" id="calendarNext" aria-label="Next month">
+            ›</button
+          ><button
+            type="button"
+            class="pill pill-icon"
+            id="calendarClose"
+            aria-label="Close calendar"
+          >
+            ×
+          </button>
+        </div>
+        <div id="calendarDays" class="calendar-days"></div>
+        <footer class="calendar-footer" id="calendarFooter" hidden>
+          <span id="calendarSelection" role="status"></span>
+          <button type="button" class="pill pill-sm" id="calendarDone">Done</button>
+        </footer>
+      </dialog>
+    </template>
+  </body>
+</html>

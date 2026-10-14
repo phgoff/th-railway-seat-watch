@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Railway Seat Watch",
+  "version": "1.0.0",
+  "description": "Check Thai railway seat availability across dates using your D-Ticket session.",
+  "icons": {
+    "128": "icon.png"
+  },
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Open Railway Seat Watch",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://dticket.railway.co.th/DTicketPublicWeb/*"
+      ],
+      "js": [
+        "booking.js",
+        "bridge.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://dticket.railway.co.th/DTicketPublicWeb/*"
+      ],
+      "js": [
+        "scanner.js",
+        "ui.js",
+        "calendar.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

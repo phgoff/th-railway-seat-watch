@@ -1,0 +1,140 @@
+name: Publish ZIP release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag matching the reviewed main manifest, such as v1.0.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-zip-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.metadata.outputs.tag }}
+      version: ${{ steps.metadata.outputs.version }}
+      commit: ${{ github.sha }}
+      artifact_id: ${{ steps.package.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Validate release metadata
+        id: metadata
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          tag = os.environ['RELEASE_TAG']
+          if not re.fullmatch(r'v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', tag):
+              raise SystemExit('Expected a version tag such as v1.0.0')
+          version = json.loads(Path('extension/manifest.json').read_text())['version']
+          if tag != 'v' + version:
+              raise SystemExit(f'Tag {tag} and manifest version {version} differ')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'tag={tag}\nversion={version}\n')
+          PY
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+          cache: pip
+      - run: npm ci --ignore-scripts
+      - run: python3 -m pip install -r requirements-dev.txt
+      - run: npx playwright install --with-deps chromium
+      - run: npm run check
+      - run: git diff --exit-code -- extension/content.js extension/ui.js extension/preview-data.js
+      - run: sha256sum railway-seat-watch-extension.zip > railway-seat-watch-extension.zip.sha256
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        id: package
+        with:
+          name: release-package
+          path: |
+            railway-seat-watch-extension.zip
+            railway-seat-watch-extension.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.verify.outputs.artifact_id }}
+          merge-multiple: true
+      - name: Publish the verified archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.verify.outputs.version }}
+          RELEASE_COMMIT: ${{ needs.verify.outputs.commit }}
+          RELEASE_ARTIFACT: ${{ needs.verify.outputs.artifact_id }}
+          RELEASE_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          sha256sum --check railway-seat-watch-extension.zip.sha256
+          python3 - <<'PY'
+          import json, os, re, urllib.error, urllib.request, zipfile
+          tag = os.environ['RELEASE_TAG']
+          version = os.environ['RELEASE_VERSION']
+          commit = os.environ['RELEASE_COMMIT']
+          if not re.fullmatch(r'v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', tag) or tag != 'v' + version:
+              raise SystemExit('Invalid release version')
+          if not re.fullmatch(r'[0-9a-f]{40}', commit):
+              raise SystemExit('Expected the full verified commit SHA')
+          with zipfile.ZipFile('railway-seat-watch-extension.zip') as archive:
+              if json.loads(archive.read('extension/manifest.json'))['version'] != version:
+                  raise SystemExit('Archive and verified manifest version differ')
+          base = os.environ['GITHUB_API_URL'] + '/repos/' + os.environ['GH_REPO']
+          def api(path, data=None):
+              request = urllib.request.Request(base + path,
+                  data=None if data is None else json.dumps(data).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json',
+                           'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(request) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as error:
+                  if error.code == 404 and data is None:
+                      return None
+                  raise
+          if api('/releases/tags/' + tag) is not None:
+              raise SystemExit('A release already exists for this tag')
+          ref = api('/git/ref/tags/' + tag)
+          if ref is None:
+              ref = api('/git/refs', {'ref': 'refs/tags/' + tag, 'sha': commit})
+          target = ref['object']
+          seen = set()
+          while target['type'] == 'tag' and target['sha'] not in seen:
+              seen.add(target['sha'])
+              target = api('/git/tags/' + target['sha'])['object']
+          if target['type'] != 'commit' or target['sha'] != commit:
+              raise SystemExit('Existing tag does not target the verified commit')
+          with open('release-notes.md', 'w') as notes:
+              notes.write(f'Version `{version}`. Verified commit `{commit}`. Artifact ID `{os.environ["RELEASE_ARTIFACT"]}`.\n\n')
+              notes.write(f'[Verification and ZIP artifact]({os.environ["RELEASE_RUN"]}).\n')
+          PY
+          gh release create "$RELEASE_TAG" --verify-tag --target "$RELEASE_COMMIT" --title "Railway Seat Watch $RELEASE_TAG" --generate-notes --notes-file release-notes.md railway-seat-watch-extension.zip railway-seat-watch-extension.zip.sha256

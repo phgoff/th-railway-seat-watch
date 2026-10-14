@@ -1,0 +1,7 @@
+extension/content.js
+extension/ui.js
+extension/preview-data.js
+fixtures/local-*.json
+node_modules/
+.venv/
+.audit/

@@ -1,0 +1,12 @@
+{
+  "singleQuote": true,
+  "printWidth": 100,
+  "overrides": [
+    {
+      "files": "extension/manifest.json",
+      "options": {
+        "parser": "json-stringify"
+      }
+    }
+  ]
+}

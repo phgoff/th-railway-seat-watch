@@ -1,0 +1,27 @@
+{
+  "name": "railway-seat-watch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development tools for the Railway Seat Watch browser extension",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "python3 build-extension.py",
+    "test": "node --test tests/*.test.cjs",
+    "lint": "eslint . && python3 -m ruff check .",
+    "format": "prettier --write . && python3 -m ruff format .",
+    "format:check": "prettier --check . && python3 -m ruff format --check .",
+    "check": "npm run lint && npm run format:check && python3 release.py --check && npm run test:browser",
+    "test:browser": "playwright test",
+    "screenshot": "node scripts/screenshot.cjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.0",
+    "eslint": "10.12.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.10"
+  }
+}

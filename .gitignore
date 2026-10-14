@@ -1,0 +1,15 @@
+# Local artifacts
+.DS_Store
+__pycache__/
+*.pyc
+*.zip
+availability-results*.json
+fixtures/local-*.json
+.env
+.env.*
+node_modules/
+.venv/
+.ruff_cache/
+.audit/
+test-results/
+playwright-report/
